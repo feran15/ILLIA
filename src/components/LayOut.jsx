@@ -33,6 +33,7 @@ export default function Layout() {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   return (
+    <div>
     <div className="min-h-screen bg-background flex font-body">
       {showOnboarding && <Onboarding onComplete={() => setShowOnboarding(false)} />}
       {/* Desktop Sidebar */}
@@ -73,6 +74,7 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+    </div>
     </div>
   );
 }
