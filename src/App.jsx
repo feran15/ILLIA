@@ -8,7 +8,7 @@ import UserNotRegisteredError from './components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Landing from './pages/Landing';
-import Layout from './components/Layout';
+import Layout from './components/Layout'
 import Home from './pages/Home';
 import TrendsDashboard from './pages/TrendsDashboard';
 import ContentCalendar from './pages/ContentCalendar';
