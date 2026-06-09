@@ -43,7 +43,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route element={<Layout />}>
+      <Route element={<LayOut />}>
         <Route path="/studio" element={<Home />} />
         <Route path="/studio/trends" element={<TrendsDashboard />} />
         <Route path="/studio/calendar" element={<ContentCalendar />} />
