@@ -37,7 +37,7 @@ export default function Layout() {
       {showOnboarding && <Onboarding onComplete={() => setShowOnboarding(false)} />}
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <Sidebar />
+        <SideBar />
       </div>
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-auto">
