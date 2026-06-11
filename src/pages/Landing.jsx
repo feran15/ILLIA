@@ -15,35 +15,35 @@ const FEATURES = [
     color: 'from-violet-500 to-purple-600',
     glow: 'shadow-violet-500/25',
     title: 'AI Content Assistant',
-    desc: 'Chat with your personal AI to brainstorm, refine, and strategize your content — like having a creative director on call 24/7.',
+    desc: 'Chat with your personal AI to brainstorm, refine, and strategize your content like having a creative director on call 24/7.',
   },
   {
     icon: Type,
     color: 'from-pink-500 to-rose-600',
     glow: 'shadow-pink-500/25',
     title: 'Caption Generator',
-    desc: 'Generate 4 platform-perfect captions in seconds. Tuned for Instagram hooks, LinkedIn authority, TikTok punches, and more.',
+    desc: 'Generate 4 platform perfect captions in seconds. Tuned for Instagram hooks, LinkedIn authority, TikTok punches, and more.',
   },
   {
     icon: Lightbulb,
     color: 'from-amber-400 to-orange-500',
     glow: 'shadow-amber-400/25',
     title: 'Viral Post Ideas',
-    desc: 'Never run out of ideas. Get 8 tailored, trend-aware content ideas for your niche on any platform — instantly.',
+    desc: 'Never run out of ideas. Get 8 tailored, trend aware content ideas for your niche on any platform  instantly.',
   },
   {
     icon: Image,
     color: 'from-cyan-400 to-blue-500',
     glow: 'shadow-cyan-400/25',
     title: 'AI Image Generator',
-    desc: 'Turn a text description into stunning visuals. Upload a reference image for style-matched results your audience will love.',
+    desc: 'Turn a text description into stunning visuals. Upload a reference image for style matched results your audience will love.',
   },
   {
     icon: Calendar,
     color: 'from-green-400 to-emerald-500',
     glow: 'shadow-green-400/25',
     title: 'Content Calendar',
-    desc: 'Schedule posts, get reminders, and visualize your entire content pipeline — so you never miss a posting window.',
+    desc: 'Schedule posts, get reminders, and visualize your entire content pipeline so you never miss a posting window.',
   },
   {
     icon: TrendingUp,
@@ -58,12 +58,12 @@ const STEPS = [
   {
     num: '01',
     title: 'Tell us about your brand',
-    desc: 'Quick onboarding captures your niche, tone, platforms, and goals — so every output feels like you, not like a robot.',
+    desc: 'Quick onboarding captures your niche, tone, platforms, and goals so every output feels like you, not like a robot.',
   },
   {
     num: '02',
     title: 'Generate content in seconds',
-    desc: 'Pick a tool — captions, ideas, images, or just chat. The AI crafts platform-specific content tailored to your brand voice.',
+    desc: 'Pick a tool captions, ideas, images, or just chat. The AI crafts platform specific content tailored to your brand voice.',
   },
   {
     num: '03',
@@ -95,7 +95,7 @@ const TESTIMONIALS = [
     platform: 'Food Creator · 55k followers',
     avatar: 'CE',
     color: 'from-amber-400 to-orange-500',
-    quote: 'I used to dread writing captions. Now I just describe my dish, pick a vibe, and boom — 4 captions ready to post. This app is genuinely magic.',
+    quote: 'I used to dread writing captions. Now I just describe my dish, pick a vibe, and boom 4 captions ready to post. This app is genuinely magic.',
   },
   {
     name: 'Kunle Balogun',
@@ -251,7 +251,7 @@ export default function Landing() {
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            IlliaAi is your AI studio for generating captions, viral post ideas, stunning images, and a full content strategy — in seconds, not hours.
+            IlliaAi is your AI studio for generating captions, viral post ideas, stunning images, and a full content strategy in seconds, not hours.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <Link to="/studio" className="flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-lg hover:opacity-90 transition-all shadow-xl shadow-primary/30 hover:scale-105">
@@ -262,7 +262,7 @@ export default function Landing() {
             </a>
           </div>
 
-          {/* Stats */}
+          {/* Stats
           <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
             {[
               { label: 'Active Creators', target: 12000, suffix: '+' },
@@ -276,7 +276,7 @@ export default function Landing() {
                 <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
 
         {/* Hero app mockup */}
@@ -516,10 +516,10 @@ export default function Landing() {
             </span>
           </h2>
           <p className="text-xl text-muted-foreground mb-10">
-            Join 12,000+ creators who stopped struggling with content and started showing up consistently with IlliaAi.
+            Join  creators who stopped struggling with content and started showing up consistently with IlliaAi.
           </p>
           <Link to="/studio" className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-xl hover:opacity-90 transition-all shadow-2xl shadow-primary/30 hover:scale-105">
-            <Sparkles className="w-6 h-6" /> Start Creating — It's Free
+            <Sparkles className="w-6 h-6" /> Start Creating  It's Free
           </Link>
           <p className="mt-4 text-sm text-muted-foreground">No credit card required. Start in 60 seconds.</p>
         </div>
