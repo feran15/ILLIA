@@ -479,7 +479,7 @@ export default function Landing() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/20">
+      {/* <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-sm font-medium mb-4">
@@ -527,7 +527,7 @@ export default function Landing() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* CTA SECTION */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
