@@ -39,11 +39,15 @@ const AuthenticatedApp = () => {
     }
   }
 
-  // Render the main app
+ // Render the main app
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route element={<LayOut />}>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route element={<Layout />}>
         <Route path="/studio" element={<Home />} />
         <Route path="/studio/trends" element={<TrendsDashboard />} />
         <Route path="/studio/calendar" element={<ContentCalendar />} />
