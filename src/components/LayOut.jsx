@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import Sidebar from './Sidebar';
+import SideBar from './Sidebar';
 import MobileNav from './MobileNav';
 import NotificationPanel from './NotificationPanel';
 import Onboarding from './Onboarding';
@@ -62,7 +62,7 @@ export default function Layout() {
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <Sidebar />
+        <SideBar />
       </div>
 
       {/* Main content */}
