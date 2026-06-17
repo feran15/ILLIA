@@ -238,8 +238,8 @@ export default function Landing() {
           >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
-            <Link to="/studio" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log In</Link>
-            <Link to="/studio" className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-primary/30">
+            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log In</Link>
+            <Link to="/register" className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-primary/30">
               Get Started Free
             </Link>
           </div>
