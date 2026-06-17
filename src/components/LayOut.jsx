@@ -1,20 +1,30 @@
 import { Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import SideBar from './SideBar';
+import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import NotificationPanel from './NotificationPanel';
 import Onboarding from './Onboarding';
+import GuidedTour from './GuidedTour';
 import { Sun, Moon, Bell } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function Layout() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(u => {
-      if (u && !u.onboardingComplete) setShowOnboarding(true);
+      if (!u) return;
+      setUserProfile(u);
+      if (!u.onboardingComplete) {
+        setShowOnboarding(true);
+      } else if (!u.tourComplete) {
+        // Small delay so the page renders before the tour overlay appears
+        setTimeout(() => setShowTour(true), 800);
+      }
     }).catch(() => {});
   }, []);
 
@@ -32,21 +42,44 @@ export default function Layout() {
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
+  const handleOnboardingComplete = async () => {
+    const u = await base44.auth.me().catch(() => null);
+    setUserProfile(u);
+    setShowOnboarding(false);
+    // Start tour after onboarding
+    setTimeout(() => setShowTour(true), 600);
+  };
+
+  const displayName = userProfile?.onboardingName || userProfile?.full_name || '';
+  const countryFlag = userProfile?.countryFlag || '';
+
   return (
     <div className="min-h-screen bg-background flex font-body">
-      {showOnboarding && <Onboarding onComplete={() => setShowOnboarding(false)} />}
+      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
+      {showTour && !showOnboarding && (
+        <GuidedTour onComplete={() => setShowTour(false)} />
+      )}
+
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <SideBar />
+        <Sidebar />
       </div>
+
       {/* Main content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-auto">
         {/* Mobile top bar */}
         <div className="md:hidden">
           <MobileNav />
         </div>
+
         {/* Top-right controls */}
         <div className="flex justify-end items-center gap-2 px-4 md:px-8 pt-4 md:pt-6">
+          {displayName && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-sm text-foreground">
+              {countryFlag && <span className="text-base">{countryFlag}</span>}
+              <span className="font-medium hidden sm:inline">{displayName}</span>
+            </div>
+          )}
           <div className="relative">
             <button
               onClick={() => setShowNotifications(v => !v)}
@@ -69,10 +102,11 @@ export default function Layout() {
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
         </div>
+
         <div className="flex-1 p-4 md:p-8 pt-2 md:pt-4">
           <Outlet />
         </div>
       </main>
     </div>
   );
-}   
+}
