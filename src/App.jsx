@@ -12,7 +12,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import Layout from './components/Layout';
+import LayOut from './components/LayOut';
 import Home from './pages/Home';
 import TrendsDashboard from './pages/TrendsDashboard';
 import ContentCalendar from './pages/ContentCalendar';
@@ -51,7 +51,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route element={<Layout />}>
+      <Route element={<LayOut />}>
         <Route path="/studio" element={<Home />} />
         <Route path="/studio/trends" element={<TrendsDashboard />} />
         <Route path="/studio/calendar" element={<ContentCalendar />} />
