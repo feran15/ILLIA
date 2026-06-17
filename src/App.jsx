@@ -15,7 +15,10 @@ import ContentCalendar from './pages/ContentCalendar';
 import Profile from './pages/Profile';
 import Templates from './pages/Templates';
 import MediaLibrary from './pages/MediaLibrary';
-
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -47,7 +50,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route element={<Layout />}>
+      <Route element={<LayOut />}>
         <Route path="/studio" element={<Home />} />
         <Route path="/studio/trends" element={<TrendsDashboard />} />
         <Route path="/studio/calendar" element={<ContentCalendar />} />
