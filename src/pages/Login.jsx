@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import {signInWithEmailAndPassword,GoogleAuthProvider,signInWithPopup}from "firebase/auth";
+import { auth}from "../Firebase/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import GoogleIcon from "../components/Googleicon";
 import AuthLayout from "@/components/AuthLayout";
+import { useNavigate } from "react-router-dom";
 // import GoogleIcon from "@/components/GoogleIcon";
 
 export default function Login() {
@@ -15,24 +17,50 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = "/";
-    } catch (err) {
-      setError(err.message || "Invalid email or password");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const navigate = useNavigate();
+  
+const handleSubmit =
+async (e) => {
+ e.preventDefault();
 
-  const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", "/");
-  };
+ setError("");
+ setLoading(true);
 
+ try {
+   await signInWithEmailAndPassword(
+     auth,
+     email,
+     password
+   );
+
+   navigate("/studio");
+ } catch (err) {
+   setError(
+     err.message
+   );
+ } finally {
+   setLoading(false);
+ }
+};
+
+const handleGoogle =
+async () => {
+ try {
+   const provider =
+     new GoogleAuthProvider();
+
+   await signInWithPopup(
+     auth,
+     provider
+   );
+
+   navigate("/studio");
+ } catch (err) {
+   setError(
+     err.message
+   );
+ }
+};
   return (
     <AuthLayout
       icon={LogIn}
