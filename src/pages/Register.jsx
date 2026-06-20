@@ -60,6 +60,7 @@ export default function Register() {
             const provider = new GoogleAuthProvider();
             await signInWithPopup(auth, provider);
             window.location.href = "/";
+            // navigate("/studio")
         } catch (err) {
             err.message && toast({ title: "Error", description: err.message });
         }

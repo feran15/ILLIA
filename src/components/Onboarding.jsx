@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Sparkles, Check, Loader2 } from 'lucide-react';
-
+import {  Link } from "react-router-dom"
 const PURPOSE_OPTIONS = [
   { id: 'personal', label: 'My personal brand / lifestyle', emoji: '✨' },
   { id: 'fashion', label: 'My fashion or beauty business', emoji: '👗' },
@@ -86,7 +86,7 @@ export default function Onboarding({ onComplete }) {
       contentPurpose: purposes,
       platforms,
       defaultTone: tone,
-      niche: purposes.join(', '),
+      niche: purposes.join(', ')
     });
     setSaving(false);
     setStep(7);
@@ -219,13 +219,14 @@ export default function Onboarding({ onComplete }) {
                 />
               ))}
             </div>
+            <Link to="/studio">
             <button
               onClick={finish}
               disabled={!tone || saving}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-base shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Finish setup ✨'}
-            </button>
+            </button></Link>
             <button onClick={() => { finish(); }} className="hidden" />
             <button onClick={skip} className="w-full mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
               Skip for now
