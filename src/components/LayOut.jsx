@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import SideBar from './SideBar';
 import MobileNav from './MobileNav';
 import NotificationPanel from './NotificationPanel';
-import Onboarding from './Onboarding';
+// import Onboarding from './Onboarding';
 import GuidedTour from './GuidedTour';
 import { Sun, Moon, Bell } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -11,22 +11,22 @@ import { base44 } from '@/api/base44Client';
 export default function Layout() {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
 
-  useEffect(() => {
-    base44.auth.me().then(u => {
-      if (!u) return;
-      setUserProfile(u);
-      if (!u.onboardingComplete) {
-        setShowOnboarding(true);
-      } else if (!u.tourComplete) {
-        // Small delay so the page renders before the tour overlay appears
-        setTimeout(() => setShowTour(true), 800);
-      }
-    }).catch(() => {});
-  }, []);
+  // useEffect(() => {
+  //   base44.auth.me().then(u => {
+  //     if (!u) return;
+  //     setUserProfile(u);
+  //     if (!u.onboardingComplete) {
+  //       setShowOnboarding(true);
+  //     } else if (!u.tourComplete) {
+  //       // Small delay so the page renders before the tour overlay appears
+  //       setTimeout(() => setShowTour(true), 800);
+  //     }
+  //   }).catch(() => {});
+  // }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -55,10 +55,10 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-background flex font-body">
-      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
+      {/* {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
       {showTour && !showOnboarding && (
         <GuidedTour onComplete={() => setShowTour(false)} />
-      )}
+      )} */}
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block">

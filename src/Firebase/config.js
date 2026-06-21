@@ -7,6 +7,7 @@ import {
 import {
   getFirestore
 } from "firebase/firestore";
+import { config } from "zod";
 
 const firebaseConfig = {
   apiKey:
@@ -44,3 +45,5 @@ export const auth =
 
 export const db =
   getFirestore(app);
+
+  export default config;
