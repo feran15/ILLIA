@@ -5,10 +5,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2, Clock } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-
+import { api } from '../lib/CalendarApi';
 const PLATFORMS = ['linkedin', 'instagram', 'twitter', 'facebook', 'tiktok'];
 
 const BEST_TIMES = {
@@ -44,14 +43,65 @@ export default function PostFormModal({ open, onClose, post }) {
     }
   }, [post, open]);
 
-  const createPost = useMutation({
-    mutationFn: (data) => isEdit ? base44.entities.ScheduledPost.update(post.id, data) : base44.entities.ScheduledPost.create(data),
-    onSuccess: () => {
-      toast.success(isEdit ? 'Post updated!' : 'Post scheduled! You\'ll get reminders before it\'s time to post 🔔');
-      queryClient.invalidateQueries({ queryKey: ['scheduledPosts'] });
-      onClose();
-    }
-  });
+  // const createPost = useMutation({
+  //   mutationFn: (data) => isEdit ? base44.entities.ScheduledPost.update(post.id, data) : base44.entities.ScheduledPost.create(data),
+  //   onSuccess: () => {
+  //     toast.success(isEdit ? 'Post updated!' : 'Post scheduled! You\'ll get reminders before it\'s time to post 🔔');
+  //     queryClient.invalidateQueries({ queryKey: ['scheduledPosts'] });
+  //     onClose();
+  //   }
+  // });
+
+
+ const createPost = useMutation({
+  mutationFn: async (payload) => {
+    console.log('sending:', payload);
+
+    const res = await api(
+      '/api/calendar/posts',
+      {
+        method: isEdit
+          ? 'PUT'
+          : 'POST',
+
+        body: JSON.stringify(
+          payload
+        ),
+      }
+    );
+
+    console.log(
+      'success:',
+      res
+    );
+
+    return res;
+  },
+
+  onSuccess: async () => {
+    await queryClient
+      .invalidateQueries({
+        queryKey: [
+          'scheduledPosts',
+        ],
+      });
+
+    toast.success(
+      'Post scheduled!'
+    );
+
+    onClose();
+  },
+
+  onError: (err) => {
+    console.log(err);
+
+    toast.error(
+      err.data?.error ||
+      err.message
+    );
+  },
+});
 
   const togglePlatform = (p) => {
     setPlatforms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
@@ -71,7 +121,7 @@ export default function PostFormModal({ open, onClose, post }) {
     if (!title.trim() || !content.trim() || platforms.length === 0 || !date || !time) {
       return toast.error('Please fill in all fields and select at least one platform.');
     }
-    createPost.mutate({ title, content, platforms, scheduled_date: date, scheduled_time: time, publish_mode: publishMode, status: 'scheduled', ai_generated: false });
+    createPost.mutate({ title, content, platforms,   scheduled_at: `${date}T${time}:00`, publish_mode: publishMode, status: 'scheduled', ai_generated: false });
   };
 
   return (
