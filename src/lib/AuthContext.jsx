@@ -1,8 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
-import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
-
+import { auth } from '../Firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -14,9 +13,27 @@ export const AuthProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
+
   useEffect(() => {
-    checkAppState();
-  }, []);
+  const unsubscribe = onAuthStateChanged(
+    auth,
+    async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+      setIsLoadingPublicSettings(false);
+    }
+  );
+
+  return unsubscribe;
+}, []);
 
   const checkAppState = async () => {
     try {
@@ -89,48 +106,57 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const checkUserAuth = async () => {
-    try {
-      // Now check if the user is authenticated
-      setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-    } catch (error) {
-      console.error('User auth check failed:', error);
-      setIsLoadingAuth(false);
-      setIsAuthenticated(false);
-      setAuthChecked(true);
-      
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
-      }
-    }
-  };
 
-  const logout = (shouldRedirect = true) => {
+const checkUserAuth = async () => {
+  try {
+    setIsLoadingAuth(true);
+
+    const currentUser =
+      auth.currentUser;
+
+    if (!currentUser) {
+      setUser(null);
+      setIsAuthenticated(false);
+      return;
+    }
+
+    // Optional:
+    // refresh token if expired
+    await currentUser.getIdToken(true);
+
+    setUser(currentUser);
+    setIsAuthenticated(true);
+
+  } catch (error) {
+    console.error(
+      'User auth check failed:',
+      error
+    );
+
     setUser(null);
     setIsAuthenticated(false);
-    
-    if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
-    } else {
-      // Just remove the token without redirect
-      base44.auth.logout();
-    }
-  };
 
-  const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
-  };
+    setAuthError({
+      type: 'auth_required',
+      message:
+        'Authentication required'
+    });
+
+  } finally {
+    setIsLoadingAuth(false);
+    setAuthChecked(true);
+  }
+};
+  const logout = async () => {
+  await signOut(auth);
+
+  setUser(null);
+  setIsAuthenticated(false);
+};
+
+ const navigateToLogin = () => {
+  window.location.href = '/login';
+};
 
   return (
     <AuthContext.Provider value={{ 
@@ -158,3 +184,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

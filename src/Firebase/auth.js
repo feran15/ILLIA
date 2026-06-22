@@ -17,4 +17,4 @@ export async function login() {
     provider
   );
 }
-export default auth;
+export  {auth };
