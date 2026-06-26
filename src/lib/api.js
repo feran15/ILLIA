@@ -53,3 +53,5 @@ export async function api(
 
   return data;
 }
+
+export default api;

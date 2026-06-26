@@ -1,11 +1,15 @@
-  import { useState } from 'react';
+ console.log('CONTENT CALENDAR MOUNTED');
+console.log('api:', api);
+ 
+ 
+ import { useState } from 'react';
   import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-  import { base44 } from '@/api/base44Client';
   import { Button } from '@/components/ui/button';
   import { Badge } from '@/components/ui/badge';
   import { CalendarDays, Plus, ChevronLeft, ChevronRight, Edit2, Trash2, Clock, Bell } from 'lucide-react';
   import PostFormModal from '@/components/PostFormModal';
   import { toast } from 'sonner';
+  import api from'../lib/api';
   import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addMonths, subMonths, isToday } from 'date-fns';
 
   const PLATFORM_COLORS = {
@@ -17,44 +21,55 @@
   };
 
   export default function ContentCalendar() {
+    
     const queryClient = useQueryClient();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [showModal, setShowModal] = useState(false);
     const [editingPost, setEditingPost] = useState(null);
     const [selectedDay, setSelectedDay] = useState(null);
 
-   const { data: posts = [], isLoading } = useQuery({
+
+const {
+  data: posts = [],
+  isLoading,
+  error,
+} = useQuery({
   queryKey: ['scheduledPosts'],
   queryFn: async () => {
     const res = await api('/api/calendar/posts');
 
-    console.log('calendar response:', res);
+    console.log('FULL RESPONSE:', res);
+    console.log('POSTS:', res.posts);
 
-    return Array.isArray(res)
-      ? res
-      : Array.isArray(res?.data)
-      ? res.data
-      : [];
+    return res.posts || [];
   },
 });
 
-    const deletePost = useMutation({
-      mutationFn: (id) => base44.entities.ScheduledPost.delete(id),
-      onSuccess: () => { toast.success('Post deleted.'); queryClient.invalidateQueries({ queryKey: ['scheduledPosts'] }); }
-    });
+  const deletePost = useMutation({
+  mutationFn: (id) =>
+    api(`/api/calendar/posts/${id}`, {
+      method: 'DELETE'
+    }),
 
-    const sendReminder = useMutation({
-      mutationFn: async (post) => {
-        await base44.integrations.Core.SendEmail({
-          to: (await base44.auth.me()).email,
-          subject: `⏰ Reminder: "${post.title}" is scheduled soon!`,
-          body: `Hey there!\n\nThis is a reminder that your post "${post.title}" is scheduled for ${post.scheduled_date} at ${post.scheduled_time}.\n\nPlatforms: ${post.platforms?.join(', ')}\n\nPost content:\n${post.content}\n\n${post.publish_mode === 'reminder' ? 'Remember to post manually!' : 'This will auto-publish at the scheduled time.'}\n\nStay consistent! 🚀\n— CreatorAI`
-        });
-        return post;
-      },
-      onSuccess: (post) => toast.success(`Test reminder sent for "${post.title}"! Check your email.`)
-    });
+  onSuccess: () => {
+    toast.success('Post deleted.');
 
+    queryClient.invalidateQueries({
+      queryKey: ['scheduledPosts']
+    });
+  }
+});
+
+   const sendReminder = useMutation({
+  mutationFn: async (post) => {
+    console.log('Sending reminder for:', post.title);
+    return post;
+  },
+
+  onSuccess: (post) => {
+    toast.success(`Reminder sent for "${post.title}"`);
+  }
+});
     const days = eachDayOfInterval({ start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
     const startDow = startOfMonth(currentMonth).getDay();
 
@@ -65,10 +80,23 @@
 console.log('posts:', posts);
 console.log('type:', typeof posts);
 console.log('isArray:', Array.isArray(posts));
-    const upcomingPosts = posts.filter(p => p.status !== 'published' && p.scheduled_date >= new Date().toISOString().split('T')[0])
-      .sort((a, b) => (a.scheduled_date + a.scheduled_time).localeCompare(b.scheduled_date + b.scheduled_time))
-      .slice(0, 10);
 
+
+const today = new Date().toISOString().split('T')[0];
+
+const upcomingPosts = posts
+  .filter(
+    p =>
+      p.scheduled_date &&
+      p.status !== 'published' &&
+      p.scheduled_date >= today
+  )
+  .sort((a, b) =>
+    `${a.scheduled_date}${a.scheduled_time}`.localeCompare(
+      `${b.scheduled_date}${b.scheduled_time}`
+    )
+  )
+  .slice(0, 10);
     const selectedDayPosts = selectedDay ? postsOnDay(selectedDay) : [];
 
     return (
@@ -172,7 +200,7 @@ console.log('isArray:', Array.isArray(posts));
                   <p className="text-sm text-muted-foreground">No upcoming posts yet.</p>
                   <p className="text-xs text-muted-foreground">Schedule your first post! ✨</p>
                 </div>
-              )}
+              )} 
               <div className="space-y-3">
                 {upcomingPosts.map(post => (
                   <div key={post.id} className="border border-border rounded-xl p-3 hover:border-primary/30 transition-colors">

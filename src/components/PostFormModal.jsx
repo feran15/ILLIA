@@ -52,53 +52,39 @@ export default function PostFormModal({ open, onClose, post }) {
   //   }
   // });
 
-
- const createPost = useMutation({
+const createPost = useMutation({
   mutationFn: async (payload) => {
-    console.log('sending:', payload);
+    const endpoint = isEdit
+      ? `/api/calendar/posts/${post.id}`
+      : '/api/calendar/posts';
 
-    const res = await api(
-      '/api/calendar/posts',
-      {
-        method: isEdit
-          ? 'PUT'
-          : 'POST',
-
-        body: JSON.stringify(
-          payload
-        ),
-      }
-    );
-
-    console.log(
-      'success:',
-      res
-    );
-
-    return res;
+    return api(endpoint, {
+      method: isEdit ? 'PUT' : 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 
   onSuccess: async () => {
-    await queryClient
-      .invalidateQueries({
-        queryKey: [
-          'scheduledPosts',
-        ],
-      });
+    await queryClient.invalidateQueries({
+      queryKey: ['scheduledPosts'],
+    });
 
     toast.success(
-      'Post scheduled!'
+      isEdit
+        ? 'Post updated successfully!'
+        : 'Post scheduled successfully!'
     );
 
     onClose();
   },
 
   onError: (err) => {
-    console.log(err);
+    console.error(err);
 
     toast.error(
       err.data?.error ||
-      err.message
+      err.message ||
+      'Something went wrong'
     );
   },
 });
@@ -118,11 +104,41 @@ export default function PostFormModal({ open, onClose, post }) {
   };
 
   const handleSave = () => {
-    if (!title.trim() || !content.trim() || platforms.length === 0 || !date || !time) {
-      return toast.error('Please fill in all fields and select at least one platform.');
-    }
-    createPost.mutate({ title, content, platforms,   scheduled_at: `${date}T${time}:00`, publish_mode: publishMode, status: 'scheduled', ai_generated: false });
-  };
+  console.log('BUTTON CLICKED');
+
+  console.log({
+    title,
+    content,
+    platforms,
+    date,
+    time,
+  });
+
+  if (
+    !title.trim() ||
+    !content.trim() ||
+    platforms.length === 0 ||
+    !date ||
+    !time
+  ) {
+    console.log('VALIDATION FAILED');
+
+    return toast.error(
+      'Please fill in all fields and select at least one platform.'
+    );
+  }
+
+  console.log('VALIDATION PASSED');
+
+  createPost.mutate({
+    title,
+    content,
+    platforms,
+    scheduled_at: `${date}T${time}:00`,
+    publish_mode: publishMode,
+    ai_generated: false,
+  });
+};
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
