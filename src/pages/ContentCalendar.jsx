@@ -1,8 +1,4 @@
- console.log('CONTENT CALENDAR MOUNTED');
-console.log('api:', api);
- 
- 
- import { useState } from 'react';
+  import { useState } from 'react';
   import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
   import { Button } from '@/components/ui/button';
   import { Badge } from '@/components/ui/badge';
@@ -28,9 +24,8 @@ console.log('api:', api);
     const [editingPost, setEditingPost] = useState(null);
     const [selectedDay, setSelectedDay] = useState(null);
 
-
 const {
-  data: posts = [],
+  data,
   isLoading,
   error,
 } = useQuery({
@@ -38,12 +33,15 @@ const {
   queryFn: async () => {
     const res = await api('/api/calendar/posts');
 
-    console.log('FULL RESPONSE:', res);
-    console.log('POSTS:', res.posts);
+    console.log('Calendar API response:', res);
 
-    return res.posts || [];
+    return Array.isArray(res?.posts)
+      ? res.posts
+      : [];
   },
 });
+
+const posts = Array.isArray(data) ? data : [];
 
   const deletePost = useMutation({
   mutationFn: (id) =>

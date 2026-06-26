@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import api from '../lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LayoutTemplate, Plus, Star, Trash2, Edit2, Check, X } from 'lucide-react';
@@ -27,21 +27,58 @@ export default function Templates() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [filterType, setFilterType] = useState('all');
 
-  const { data: templates = [], isLoading } = useQuery({
-    queryKey: ['contentTemplates'],
-    queryFn: () => base44.entities.ContentTemplate.list('-is_favorite', 100),
-  });
+  const { data: templates = [],isLoading,} = useQuery({
+  queryKey: ['contentTemplates'],
+  queryFn: async () => {
+    const res = await api('/api/templates');
 
-  const deleteTemplate = useMutation({
-    mutationFn: (id) => base44.entities.ContentTemplate.delete(id),
-    onSuccess: () => { toast.success('Template deleted.'); queryClient.invalidateQueries({ queryKey: ['contentTemplates'] }); }
-  });
+    console.log('Templates:', res);
 
-  const toggleFavorite = useMutation({
-    mutationFn: ({ id, is_favorite }) => base44.entities.ContentTemplate.update(id, { is_favorite: !is_favorite }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contentTemplates'] })
-  });
+    return Array.isArray(res.templates)
+      ? res.templates
+      : [];
+  },
+});
 
+const deleteTemplate = useMutation({ mutationFn: async (id) => {
+    await api(`/api/templates/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  onSuccess: async () => {
+    toast.success('Template deleted.');
+
+    await queryClient.invalidateQueries({
+      queryKey: ['contentTemplates'],
+    });
+  },
+
+  onError: (err) => {
+    toast.error(err.message);
+  },
+});
+
+const toggleFavorite = useMutation({ mutationFn: async (template) => {
+    await api(`/api/templates/${template.id}`, {
+      method: 'PUT',
+
+      body: JSON.stringify({
+        is_favorite: !template.is_favorite,
+      }),
+    });
+  },
+
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ['contentTemplates'],
+    });
+  },
+
+  onError: (err) => {
+    toast.error(err.message);
+  },
+});
   const types = ['all', ...new Set(templates.map(t => t.type).filter(Boolean))];
   const filtered = filterType === 'all' ? templates : templates.filter(t => t.type === filterType);
   const favorites = filtered.filter(t => t.is_favorite);

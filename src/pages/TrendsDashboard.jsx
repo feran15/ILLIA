@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, RefreshCw, Loader2, Sparkles, Flame, ArrowUpRight } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import api from '../lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const PLATFORMS = [
@@ -20,38 +20,57 @@ export default function TrendsDashboard() {
   const [trends, setTrends] = useState({});
   const [loadingPlatforms, setLoadingPlatforms] = useState({});
 
-  const saveContent = useMutation({
-    mutationFn: (data) => base44.entities.SavedContent.create(data),
-    onSuccess: () => toast.success('Saved! Check your AI Studio to craft a post.')
-  });
+const saveContent = useMutation({
+  mutationFn: async (data) => {
+    console.log('Saving idea:', data);
 
+    // TODO:
+    // await api('/api/content/save', {
+    //   method: 'POST',
+    //   body: JSON.stringify(data),
+    // });
+
+    return data;
+  },
+
+  onSuccess: () => {
+    toast.success(
+      'Saved! Check your AI Studio to craft a post.'
+    );
+  },
+
+  onError: (err) => {
+    toast.error(err.message);
+  },
+});
   const fetchTrends = async (platformId) => {
-    setLoadingPlatforms(prev => ({ ...prev, [platformId]: true }));
-    const platform = PLATFORMS.find(p => p.id === platformId);
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `What are the top 10 trending topics on ${platform.label} right now in ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}? Include viral content categories, hashtags, and hot discussions. For each trend, give a title, brief description (1 sentence), and estimated engagement level (high/medium/viral). Return JSON.`,
-      add_context_from_internet: true,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          trends: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                title: { type: 'string' },
-                description: { type: 'string' },
-                engagement: { type: 'string' },
-                hashtag: { type: 'string' }
-              }
-            }
-          }
-        }
-      }
-    });
-    setTrends(prev => ({ ...prev, [platformId]: response.trends || [] }));
-    setLoadingPlatforms(prev => ({ ...prev, [platformId]: false }));
-  };
+  try {
+    setLoadingPlatforms(prev => ({
+      ...prev,
+      [platformId]: true,
+    }));
+
+    const res = await api(`/api/trends/${platformId}`);
+
+    console.log('TRENDS RESPONSE:', res);
+
+    setTrends(prev => ({
+      ...prev,
+      [platformId]: res.trends || [],
+    }));
+  } catch (err) {
+    console.error(err);
+
+    toast.error(
+      err.message || 'Failed to load trends'
+    );
+  } finally {
+    setLoadingPlatforms(prev => ({
+      ...prev,
+      [platformId]: false,
+    }));
+  }
+};
 
   const platform = PLATFORMS.find(p => p.id === activePlatform);
   const currentTrends = trends[activePlatform] || [];

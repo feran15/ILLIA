@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import api from '../lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,11 +20,44 @@ export default function TemplateFormModal({ open, onClose, template }) {
     else setForm({ name: '', content: '', type: 'caption', platforms: [], tags: [], is_favorite: false });
   }, [template, open]);
 
-  const save = useMutation({
-    mutationFn: (data) => template ? base44.entities.ContentTemplate.update(template.id, data) : base44.entities.ContentTemplate.create(data),
-    onSuccess: () => { toast.success(template ? 'Template updated!' : 'Template created!'); queryClient.invalidateQueries({ queryKey: ['contentTemplates'] }); onClose(); }
-  });
+const save = useMutation({ mutationFn: async (data) => {
+    if (template) {
+      return api(`/api/templates/${template.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    }
 
+    return api('/api/templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  onSuccess: async () => {
+    toast.success(
+      template
+        ? 'Template updated!'
+        : 'Template created!'
+    );
+
+    await queryClient.invalidateQueries({
+      queryKey: ['contentTemplates'],
+    });
+
+    onClose();
+  },
+
+  onError: (err) => {
+    console.error(err);
+
+    toast.error(
+      err.data?.error ||
+      err.message ||
+      'Something went wrong'
+    );
+  },
+});
   const togglePlatform = (p) => setForm(f => ({ ...f, platforms: f.platforms.includes(p) ? f.platforms.filter(x => x !== p) : [...f.platforms, p] }));
 
   return (
@@ -55,7 +88,18 @@ export default function TemplateFormModal({ open, onClose, template }) {
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Platforms</label>
             <div className="flex gap-2 flex-wrap">
               {PLATFORMS.map(p => (
-                <button key={p} onClick={() => togglePlatform(p)} className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-all border ${form.platforms.includes(p) ? 'bg-primary/20 border-primary text-primary' : 'bg-muted border-border text-muted-foreground hover:text-foreground'}`}>{p}</button>
+              <button
+  type="button"
+  key={p}
+  onClick={() => togglePlatform(p)}
+  className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-all border ${
+    form.platforms.includes(p)
+      ? 'bg-primary/20 border-primary text-primary'
+      : 'bg-muted border-border text-muted-foreground hover:text-foreground'
+  }`}
+>
+  {p}
+</button>
               ))}
             </div>
           </div>
