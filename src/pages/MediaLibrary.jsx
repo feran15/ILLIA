@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import api from '../lib/api'
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Image, Upload, Sparkles, Loader2, Trash2, Download, Video, Plus, Pencil, Check, X } from 'lucide-react';
@@ -16,23 +16,38 @@ export default function MediaLibrary() {
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['mediaItems'],
-    queryFn: () => base44.entities.MediaItem.list('-created_date', 100),
+    queryFn: async () => {
+  const res = await api('/api/media');
+  return res.items || [];
+},
   });
 
   const saveItem = useMutation({
-    mutationFn: (data) => base44.entities.MediaItem.create(data),
+    mutationFn: async (data) => {
+  return api('/api/media', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+},
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mediaItems'] }); toast.success('Saved to library!'); }
   });
 
   const deleteItem = useMutation({
-    mutationFn: (id) => base44.entities.MediaItem.delete(id),
+    mutationFn: async (id) => {
+  return api(`/api/media/${id}`, {
+    method: 'DELETE',
+  });
+},
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mediaItems'] }); toast.success('Deleted.'); }
   });
 
   const generateImage = async () => {
     if (!prompt.trim()) return toast.error('Enter a prompt first!');
     setGenerating(true);
-    const result = await base44.integrations.Core.GenerateImage({ prompt });
+   const result = await api('/api/media/generate', {
+  method: 'POST',
+  body: JSON.stringify({ prompt }),
+});
     await saveItem.mutateAsync({ title: prompt.slice(0, 60), file_url: result.url, media_type: 'image', source: 'generated', prompt });
     setPrompt('');
     setTab('library');
@@ -45,7 +60,14 @@ export default function MediaLibrary() {
     setUploading(true);
     for (const file of files) {
       const isVideo = file.type.startsWith('video/');
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const formData = new FormData();
+formData.append('file', file);
+
+const { file_url } = await api('/api/media/upload', {
+  method: 'POST',
+  body: formData,
+  isFormData: true,
+});
       await saveItem.mutateAsync({ title: file.name, file_url, media_type: isVideo ? 'video' : 'image', source: 'uploaded' });
     }
     setUploading(false);
@@ -132,7 +154,10 @@ export default function MediaLibrary() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map(item => (
               <MediaCard key={item.id} item={item} onDelete={() => deleteItem.mutate(item.id)} onRegenerate={item.source === 'generated' ? async (newPrompt) => {
-                const result = await base44.integrations.Core.GenerateImage({ prompt: newPrompt });
+                const result = await api('/api/media/generate', {
+                  method: 'POST',
+                  body: JSON.stringify({ prompt: newPrompt }),
+                });
                 await saveItem.mutateAsync({ title: newPrompt.slice(0, 60), file_url: result.url, media_type: 'image', source: 'generated', prompt: newPrompt });
               } : null} />
             ))}
