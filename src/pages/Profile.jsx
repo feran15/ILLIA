@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Link2, Bell, Check, Loader2, Zap } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { User, Link2, Bell, Loader2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../Firebase/config';
+import { auth } from '../Firebase/auth';
 const PLATFORMS = [
   { id: 'instagram', label: 'Instagram', color: 'from-pink-500 to-purple-600', icon: '📷', placeholder: '@yourusername' },
   { id: 'twitter', label: 'X / Twitter', color: 'from-sky-400 to-blue-500', icon: '𝕏', placeholder: '@handle' },
@@ -28,20 +30,46 @@ export default function Profile() {
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [checkingTrends, setCheckingTrends] = useState(false);
 
-  useEffect(() => {
-    base44.auth.me().then(u => {
+useEffect(() => {
+  const loadProfile = async () => {
+    try {
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
+      const ref = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(ref);
+
+      const u = snap.exists()
+        ? snap.data()
+        : {
+            email: currentUser.email,
+            full_name: currentUser.displayName || 'Creator',
+          };
+
       setUser(u);
-      setNiche(u?.niche || '');
-      setUsername(u?.username || '');
-      setConnectedAccounts(u?.connected_accounts || []);
-      setSocialHandles(u?.social_handles || {});
-      setRemindersEmail(u?.reminders_email !== false);
-      setRemindersInApp(u?.reminders_in_app !== false);
-      setAlertCategories(u?.alert_categories || []);
-      setAlertsEnabled(u?.trend_alerts_enabled || false);
+      setNiche(u.niche || '');
+      setUsername(u.username || '');
+      setConnectedAccounts(u.connected_accounts || []);
+      setSocialHandles(u.social_handles || {});
+      setRemindersEmail(u.reminders_email !== false);
+      setRemindersInApp(u.reminders_in_app !== false);
+      setAlertCategories(u.alert_categories || []);
+      setAlertsEnabled(u.trend_alerts_enabled || false);
+
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load profile');
+    } finally {
       setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+    }
+  };
+
+  loadProfile();
+}, []);
 
   const toggleAccount = (platformId) => {
     setConnectedAccounts(prev =>
@@ -57,33 +85,58 @@ export default function Profile() {
     }
   };
 
-  const checkTrendsNow = async () => {
-    if (alertCategories.length === 0) return toast.error('Add at least one category first!');
-    setCheckingTrends(true);
-    const cats = alertCategories.join(', ');
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `What are the top 3 biggest trending topics right now in these categories: ${cats}? Focus on major, breaking, or viral trends from ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Return JSON.`,
-      add_context_from_internet: true,
-      response_json_schema: { type: 'object', properties: { trends: { type: 'array', items: { type: 'object', properties: { category: { type: 'string' }, title: { type: 'string' }, summary: { type: 'string' } } } } } }
-    });
-    const trendsText = (response.trends || []).map((t, i) => `${i+1}. [${t.category}] ${t.title}\n   ${t.summary}`).join('\n\n');
-    await base44.integrations.Core.SendEmail({
-      to: user.email,
-      subject: `🔥 Trending Alert: Top Topics in ${cats}`,
-      body: `Hey ${user.full_name || 'Creator'}!\n\nHere are today's top trending topics in your categories (${cats}):\n\n${trendsText}\n\nLog in to IlliaAi to generate posts from these trends instantly!\n\n— IlliaAi 🚀`
-    });
-    await base44.auth.updateMe({ last_trend_alert: new Date().toISOString() });
-    toast.success('Trend alert sent to your email!');
-    setCheckingTrends(false);
-  };
+ const checkTrendsNow = () => {
+   toast.info('Trend alerts coming soon!');
+ };
+  //    const trendsText = (response.trends || []).map((t, i) => `${i+1}. [${t.category}] ${t.title}\n   ${t.summary}`).join('\n\n');
+  //    await base44.integrations.Core.SendEmail({
+  //      to: user.email,
+  //      subject: `🔥 Trending Alert: Top Topics in ${cats}`,
+  //      body: `Hey ${user.full_name || 'Creator'}!\n\nHere are today's top trending topics in your categories (${cats}):\n\n${trendsText}\n\nLog in to IlliaAi to generate posts from these trends instantly!\n\n— IlliaAi 🚀`
+  //    });
+  //    await base44.auth.updateMe({ last_trend_alert: new Date().toISOString() });
+  //    toast.success('Trend alert sent to your email!');
+  //    setCheckingTrends(false);
+  //  };
 
-  const saveProfile = async () => {
+
+const saveProfile = async () => {
+  try {
     setSaving(true);
-    await base44.auth.updateMe({ niche, username, connected_accounts: connectedAccounts, social_handles: socialHandles, reminders_email: remindersEmail, reminders_in_app: remindersInApp, alert_categories: alertCategories, trend_alerts_enabled: alertsEnabled });
-    toast.success('Profile saved!');
-    setSaving(false);
-  };
 
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      toast.error('Please sign in again');
+      return;
+    }
+
+    await setDoc(
+      doc(db, 'users', currentUser.uid),
+      {
+        email: currentUser.email,
+        full_name: currentUser.displayName,
+        niche,
+        username,
+        connected_accounts: connectedAccounts,
+        social_handles: socialHandles,
+        reminders_email: remindersEmail,
+        reminders_in_app: remindersInApp,
+        alert_categories: alertCategories,
+        trend_alerts_enabled: alertsEnabled,
+        updated_at: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    toast.success('Profile saved!');
+  } catch (err) {
+    console.error(err);
+    toast.error('Failed to save profile');
+  } finally {
+    setSaving(false);
+  }
+};
   if (loading) return (
     <div className="flex items-center justify-center py-24">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
