@@ -6,9 +6,10 @@ const nav = [
   { href: '/studio', label: 'AI', icon: Sparkles },
   { href: '/studio/trends', label: 'Trends', icon: TrendingUp },
   { href: '/studio/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/studio/templates', label: 'Templates', icon: LayoutTemplate },
-  { href: '/studio/media', label: 'Media', icon: Image },
+  // { href: '/studio/templates', label: 'Templates', icon: LayoutTemplate },
+  // { href: '/studio/media', label: 'Media', icon: Image },
   { href: '/studio/profile', label: 'Profile', icon: User },
+  { href: '/', label: 'SignOut', icon: User },
 ];
 
 export default function MobileNav() {

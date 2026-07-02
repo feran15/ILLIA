@@ -6,7 +6,7 @@ import NotificationPanel from './NotificationPanel';
 // import Onboarding from './Onboarding';
 import GuidedTour from './GuidedTour';
 import { Sun, Moon, Bell } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+
 
 export default function Layout() {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
