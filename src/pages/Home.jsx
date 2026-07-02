@@ -8,6 +8,7 @@ import UpgradeSuccess from '../components/paywall/UpgradeSuccess';
 import { usePaywall } from '../components/paywall/usePaywall';
 import { openPaystack } from '../components/paywall/PaystackButton';
 import { useQuery } from '@tanstack/react-query';
+import  { auth } from '../Firebase/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,9 +16,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Send, Copy, BookmarkPlus, Loader2, Lightbulb, Type, MessageSquare, Check, CalendarDays, ChevronRight, ChevronDown, Image, Paperclip, X, Upload, Download, Lock } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { generateAI } from '../api/ai';
 
 const PLATFORMS = ['linkedin', 'instagram', 'twitter', 'facebook', 'tiktok'];
 const TONES = ['professional', 'casual', 'funny', 'inspirational', 'educational', 'storytelling'];
@@ -144,14 +145,30 @@ function IdeaCard({ idea, index, platform, onSave }) {
   const [loading, setLoading] = useState(false);
   const [added, setAdded] = useState(false);
 
-  const addToCalendar = useMutation({
-    mutationFn: async () => {
-      const caption = await base44.integrations.Core.InvokeLLM({
-        prompt: `Write a complete, ready-to-post ${platform} caption for this content idea. Title: "${idea.title}". About: ${idea.description}. Make it platform-appropriate (${platform} style), engaging, natural-sounding, with relevant hashtags and emojis. No markdown. Just the caption, ready to copy and post.`
-      });
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return base44.entities.ScheduledPost.create({
+const addToCalendar = useMutation({
+  mutationFn: async () => {
+    const caption = await generateAI(`
+Write a complete, ready-to-post ${platform} caption.
+
+Title: "${idea.title}"
+
+About:
+${idea.description}
+
+Make it platform-appropriate (${platform} style),
+engaging, natural-sounding, with relevant hashtags
+and emojis.
+
+No markdown.
+Return only the caption.
+`);
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return api('/api/calendar/posts', {
+      method: 'POST',
+      body: JSON.stringify({
         title: idea.title,
         content: caption,
         platforms: [platform],
@@ -160,25 +177,67 @@ function IdeaCard({ idea, index, platform, onSave }) {
         publish_mode: 'reminder',
         status: 'draft',
         ai_generated: true,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scheduledPosts'] });
-      setAdded(true);
-      toast.success('Added to Content Calendar as a draft!');
-    }
-  });
+      }),
+    });
+  },
 
-  const explainIdea = async () => {
-    if (details) { setExpanded(v => !v); return; }
+  onSuccess: () => {
+    queryClient.invalidateQueries({
+      queryKey: ['scheduledPosts'],
+    });
+
+    setAdded(true);
+    toast.success(
+      'Added to Content Calendar as a draft!'
+    );
+  },
+
+  onError: (err) => {
+    console.error(err);
+    toast.error(
+      err.message || 'Failed to add post'
+    );
+  },
+});
+
+ const explainIdea = async () => {
+  if (details) {
+    setExpanded(v => !v);
+    return;
+  }
+
+  try {
     setExpanded(true);
     setLoading(true);
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `Explain this content idea for a ${platform} creator. No asterisks or markdown.\nTitle: "${idea.title}"\nBrief: ${idea.description}\n\nCover: 1) Why it works 2) How to execute it 3) Best format and timing. Be concise and actionable.`
-    });
+
+    const res = await generateAI(`
+Explain this content idea for a ${platform} creator.
+
+Title: "${idea.title}"
+
+Brief:
+${idea.description}
+
+Requirements:
+- No markdown
+- No asterisks
+- Be concise and actionable
+
+Cover:
+1. Why it works
+2. How to execute it
+3. Best content format
+4. Best posting time
+`);
+
     setDetails(formatAI(res));
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to explain idea');
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 hover:border-primary/40 transition-colors">
@@ -259,20 +318,33 @@ export default function Home() {
   const [captionTopic, setCaptionTopic] = useState('');
   const [captionTone, setCaptionTone] = useState('casual');
 
-  useEffect(() => {
-    base44.auth.me().then(u => {
-      if (!u) return;
-      setUserProfile(u);
-      if (u.defaultTone) setCaptionTone(u.defaultTone);
-      // load streak from localStorage
-      const s = JSON.parse(localStorage.getItem('cf_streak') || '{}');
-      setStreak(s.count || 0);
-      // load tone usage tracking
-      const tu = JSON.parse(localStorage.getItem('cf_tone_usage') || '{}');
-      toneUsageRef.current = tu;
-      setToneUsageCount(Object.values(tu).reduce((a, b) => a + b, 0));
-    }).catch(() => {});
-  }, []);
+ useEffect(() => {
+  const user = auth.currentUser;
+
+  if (!user) return;
+
+  setUserProfile({
+    full_name: user.displayName,
+    email: user.email,
+    onboardingName: user.displayName,
+  });
+
+  const s = JSON.parse(
+    localStorage.getItem('cf_streak') || '{}'
+  );
+
+  setStreak(s.count || 0);
+
+  const tu = JSON.parse(
+    localStorage.getItem('cf_tone_usage') || '{}'
+  );
+
+  toneUsageRef.current = tu;
+
+  setToneUsageCount(
+    Object.values(tu).reduce((a, b) => a + b, 0)
+  );
+}, []);
 
   const handleToneChange = (newTone) => {
     setCaptionTone(newTone);
@@ -307,10 +379,30 @@ export default function Home() {
       .slice(0, 4),
   });
 
-  const saveContent = useMutation({
-    mutationFn: (data) => base44.entities.SavedContent.create(data),
-    onSuccess: () => { toast.success('Saved to your library!'); queryClient.invalidateQueries({ queryKey: ['savedContent'] }); }
-  });
+ const saveContent = useMutation({
+  mutationFn: async (data) => {
+    return api('/api/content/save', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  onSuccess: () => {
+    toast.success('Saved to your library!');
+
+    queryClient.invalidateQueries({
+      queryKey: ['savedContent'],
+    });
+  },
+
+  onError: (error) => {
+    console.error(error);
+
+    toast.error(
+      error.message || 'Failed to save content'
+    );
+  },
+});
 
   const handleChatImageSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -323,22 +415,52 @@ export default function Home() {
     setChatImageUploading(false);
   };
 
-  const sendChat = async () => {
-    if (!chatInput.trim() && !chatImage) return;
+const sendChat = async () => {
+  if (!chatInput.trim() && !chatImage) return;
+
+  try {
     const uploadedUrl = chatImage?.uploadedUrl;
-    const userMsg = { role: 'user', content: chatInput || 'What can you tell me about this image?', imageUrl: chatImage?.previewUrl };
+
+    const userMsg = {
+      role: 'user',
+      content: chatInput || 'What can you tell me about this image?',
+      imageUrl: chatImage?.previewUrl,
+    };
+
     setMessages(prev => [...prev, userMsg]);
     setChatInput('');
     setChatImage(null);
     setChatLoading(true);
-    const history = [...messages, userMsg].map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n');
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are CreatorAI, an expert AI assistant for content creators, social media managers, and influencers. You help with content strategy, captions, post ideas, audience growth, platform tips, and anything content-related. Be concise, actionable, and inspiring.\n\nConversation history:\n${history}\n\nRespond to the user's last message helpfully.`,
-      ...(uploadedUrl ? { file_urls: [uploadedUrl] } : {}),
-    });
-    setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+
+    const history = [...messages, userMsg]
+      .map(
+        m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`
+      )
+      .join('\n');
+
+    const response = await generateAI(`
+You are CreatorAI, an expert AI assistant for content creators.
+
+Conversation history:
+${history}
+
+Respond to the user's last message helpfully.
+    `);
+
+    setMessages(prev => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: response,
+      },
+    ]);
+  } catch (err) {
+    console.error(err);
+    toast.error('Failed to generate response');
+  } finally {
     setChatLoading(false);
-  };
+  }
+};
 
   const handleImgRefSelect = async (e) => {
     const file = e.target.files?.[0];
