@@ -65,8 +65,8 @@ const AuthenticatedApp = () => {
         <Route path="/studio/trends" element={<TrendsDashboard />} />
         <Route path="/studio/calendar" element={<ContentCalendar />} />
         <Route path="/studio/profile" element={<Profile />} />
-        <Route path="/studio/templates" element={<Templates />} />
-        <Route path="/studio/media" element={<MediaLibrary />} />
+        {/* <Route path="/studio/templates" element={<Templates />} />
+        <Route path="/studio/media" element={<MediaLibrary />} /> */}
       </Route>
 
       <Route path="*" element={<PageNotFound />} />

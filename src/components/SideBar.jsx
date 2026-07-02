@@ -11,13 +11,12 @@ import {
 import { signOut } from 'firebase/auth';
 import { auth } from '../Firebase/config';
 import { cn } from '@/lib/utils';
-
 const nav = [
   { href: '/studio', label: 'AI Studio', icon: Sparkles },
   { href: '/studio/trends', label: 'Trends', icon: TrendingUp },
   { href: '/studio/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/studio/templates', label: 'Templates', icon: LayoutTemplate },
-  { href: '/studio/media', label: 'Media Library', icon: ImageIcon },
+  // { href: '/studio/templates', label: 'Templates', icon: LayoutTemplate },
+  // { href: '/studio/media', label: 'Media Library', icon: ImageIcon },
   { href: '/studio/profile', label: 'Profile', icon: User },
 ];
 
@@ -42,10 +41,11 @@ export default function Sidebar() {
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30">
           <Zap className="w-5 h-5 text-white" />
         </div>
-
+        <Link to="/">
         <span className="font-display font-extrabold text-xl text-foreground tracking-tight">
           Illia<span className="text-primary">Ai</span>
         </span>
+        </Link>
       </div>
 
       {/* Navigation */}
