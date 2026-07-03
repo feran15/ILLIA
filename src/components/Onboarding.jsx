@@ -119,9 +119,9 @@ const finish = async () => {
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary/40">
               <Sparkles className="w-10 h-10 text-white" />
             </div>
-            <h1 className="font-display text-4xl font-bold text-foreground mb-3">Welcome to CreatorFlow</h1>
+            <h1 className="font-display text-4xl font-bold text-foreground mb-3">Welcome to ILLIA AI</h1>
             <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
-              The only AI that helps write content the way you actually talk.
+              The only tool that helps write content the way you actually talk.
             </p>
             <button
               onClick={() => setStep(2)}
@@ -257,7 +257,7 @@ const finish = async () => {
               You're all set{name ? `, ${name}` : ''}!
             </h1>
             <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
-              Your CreatorFlow experience is ready. Let's go.
+              Your ILLIA AI experience is ready. Let's go.
             </p>
             <button
               onClick={onComplete}
