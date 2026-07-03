@@ -252,7 +252,7 @@ export default function Landing() {
             {NAV_LINKS.map(l => (
               <a key={l.label} href={l.href} onClick={() => setMobileOpen(false)} className="block text-sm text-muted-foreground hover:text-foreground transition-colors py-2">{l.label}</a>
             ))}
-            <Link to="/studio" className="block w-full text-center px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold">
+            <Link to="/login" className="block w-full text-center px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold">
               Get Started Free
             </Link>
           </div>
@@ -267,9 +267,9 @@ export default function Landing() {
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-40 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
-          {/* <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
-            <Zap className="w-3.5 h-3.5" /> AI-powered content creation for African creators
-          </div> */}
+           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
+            <Zap className="w-3.5 h-3.5" /> Content creation tools for African creators
+          </div> 
           <h1 className="font-display font-bold text-5xl sm:text-6xl lg:text-7xl text-foreground leading-[1.05] mb-6">
             Create Content{' '}
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
@@ -280,7 +280,7 @@ export default function Landing() {
             IlliaAi is your AI studio for generating captions, viral post ideas, stunning images, and a full content strategy in seconds, not hours.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link to="/studio" className="flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-lg hover:opacity-90 transition-all shadow-xl shadow-primary/30 hover:scale-105">
+            <Link to="/login" className="flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-lg hover:opacity-90 transition-all shadow-xl shadow-primary/30 hover:scale-105">
               Start Creating Free <ArrowRight className="w-5 h-5" />
             </Link>
             <a href="#how-it-works" className="flex items-center gap-2 px-8 py-4 rounded-xl border border-border text-foreground font-semibold text-lg hover:bg-muted transition-colors">
