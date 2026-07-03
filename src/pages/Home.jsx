@@ -473,16 +473,16 @@ Respond to the user's last message helpfully.
     setImgRefUploading(false);
   };
 
-  const generateImage = async () => {
-    if (!imgPrompt.trim()) return toast.error('Enter a prompt first!');
-    setImgGenerating(true);
-    const result = await base44.integrations.Core.GenerateImage({
-      prompt: imgPrompt,
-      ...(imgRefImage?.uploadedUrl ? { existing_image_urls: [imgRefImage.uploadedUrl] } : {}),
-    });
-    setGeneratedImages(prev => [{ url: result.url, prompt: imgPrompt }, ...prev]);
-    setImgGenerating(false);
-  };
+  // const generateImage = async () => {
+  //   if (!imgPrompt.trim()) return toast.error('Enter a prompt first!');
+  //   setImgGenerating(true);
+  //   const result = await base44.integrations.Core.GenerateImage({
+  //     prompt: imgPrompt,
+  //     ...(imgRefImage?.uploadedUrl ? { existing_image_urls: [imgRefImage.uploadedUrl] } : {}),
+  //   });
+  //   setGeneratedImages(prev => [{ url: result.url, prompt: imgPrompt }, ...prev]);
+  //   setImgGenerating(false);
+  // };
 
   const handleUpgradeClick = async () => {
     setPaywallLoading(true);
@@ -643,9 +643,9 @@ Respond to the user's last message helpfully.
           <TabsTrigger value="ideas" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white gap-2">
             <Lightbulb className="w-4 h-4" /> Post Ideas
           </TabsTrigger>
-          <TabsTrigger value="images" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white gap-2">
+          {/* <TabsTrigger value="images" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white gap-2">
             <Image className="w-4 h-4" /> Images
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         {/* CHAT TAB */}
@@ -898,13 +898,13 @@ Respond to the user's last message helpfully.
               )}
             </div>
 
-            <Button
+            {/* <Button
               onClick={generateImage}
               disabled={imgGenerating || !imgPrompt.trim() || imgRefUploading}
               className="w-full bg-gradient-to-r from-pink-500 to-rose-600 hover:opacity-90 text-white shadow-lg shadow-pink-500/30"
             >
               {imgGenerating ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating...</> : <><Sparkles className="w-4 h-4 mr-2" /> Generate Image</>}
-            </Button>
+            </Button> */}
           </div>
 
           {/* Generated images */}
