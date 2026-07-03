@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+// import { base44 } from '@/api/base44Client';
+import { auth } from '../Firebase/auth';
+import { db } from '../Firebase/config'; // adjust path if needed
+import { doc, setDoc } from 'firebase/firestore';
 import { X, ChevronRight } from 'lucide-react';
 
 const STEPS = [
@@ -156,10 +159,25 @@ export default function GuidedTour({ onComplete }) {
     }
   };
 
-  const finish = async () => {
-    await base44.auth.updateMe({ tourComplete: true });
+ const finish = async () => {
+  try {
+    const user = auth.currentUser;
+
+    if (user) {
+      await setDoc(
+        doc(db, 'users', user.uid),
+        {
+          tourComplete: true,
+        },
+        { merge: true }
+      );
+    }
+
     onComplete();
-  };
+  } catch (error) {
+    console.error('Error completing tour:', error);
+  }
+};
 
   const tooltipStyle = getTooltipPosition(rect, current?.placement);
   const spotlightStyle = getSpotlightStyle(rect);

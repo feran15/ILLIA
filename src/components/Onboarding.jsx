@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+// import { base44 } from '@/api/base44Client';
+import api from '../lib/api';
+import { doc, setDoc } from "firebase/firestore";
+import { db, auth } from "../Firebase/config";
 import { Sparkles, Check, Loader2 } from 'lucide-react';
 import {  Link } from "react-router-dom"
 const PURPOSE_OPTIONS = [
@@ -77,21 +80,33 @@ export default function Onboarding({ onComplete }) {
     setter(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const finish = async () => {
+const finish = async () => {
+  try {
     setSaving(true);
-    await base44.auth.updateMe({
-      onboardingComplete: true,
-      onboardingDate: new Date().toISOString(),
-      onboardingName: name,
-      contentPurpose: purposes,
-      platforms,
-      defaultTone: tone,
-      niche: purposes.join(', ')
-    });
-    setSaving(false);
-    setStep(7);
-  };
 
+    const user = auth.currentUser;
+
+    if (!user) return;
+
+    await setDoc(
+      doc(db, 'users', user.uid),
+      {
+        onboardingComplete: true,
+        onboardingDate: new Date().toISOString(),
+        onboardingName: name,
+        contentPurpose: purposes,
+        platforms,
+        defaultTone: tone,
+        niche: purposes.join(', ')
+      },
+      { merge: true }
+    );
+
+    setStep(7);
+  } finally {
+    setSaving(false);
+  }
+};
   const skip = () => setStep(s => s + 1);
 
   return (

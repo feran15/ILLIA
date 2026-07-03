@@ -3,30 +3,54 @@ import { useState, useEffect } from 'react';
 import SideBar from './SideBar';
 import MobileNav from './MobileNav';
 import NotificationPanel from './NotificationPanel';
-// import Onboarding from './Onboarding';
+ import Onboarding from './Onboarding';
 import GuidedTour from './GuidedTour';
 import { Sun, Moon, Bell } from 'lucide-react';
+import { auth } from '../Firebase/auth';
+import { db } from '../Firebase/config'
+import { doc, getDoc } from 'firebase/firestore';
 
 
 export default function Layout() {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [showNotifications, setShowNotifications] = useState(false);
-  // const [showOnboarding, setShowOnboarding] = useState(false);
+   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
 
-  // useEffect(() => {
-  //   base44.auth.me().then(u => {
-  //     if (!u) return;
-  //     setUserProfile(u);
-  //     if (!u.onboardingComplete) {
-  //       setShowOnboarding(true);
-  //     } else if (!u.tourComplete) {
-  //       // Small delay so the page renders before the tour overlay appears
-  //       setTimeout(() => setShowTour(true), 800);
-  //     }
-  //   }).catch(() => {});
-  // }, []);
+  useEffect(() => {
+  const loadUser = async () => {
+    try {
+      const user = auth.currentUser;
+
+      if (!user) return;
+
+      const snap = await getDoc(
+        doc(db, 'users', user.uid)
+      );
+
+      if (!snap.exists()) {
+        setShowOnboarding(true);
+        return;
+      }
+
+      const data = snap.data();
+
+      setUserProfile(data);
+
+      if (!data.onboardingComplete) {
+        setShowOnboarding(true);
+      } else if (!data.tourComplete) {
+        setTimeout(() => setShowTour(true), 800);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  loadUser();
+}, []);
+
 
   useEffect(() => {
     const root = document.documentElement;
@@ -43,22 +67,38 @@ export default function Layout() {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   const handleOnboardingComplete = async () => {
-    const u = await base44.auth.me().catch(() => null);
-    setUserProfile(u);
+  try {
+    const user = auth.currentUser;
+
+    if (!user) return;
+
+    const snap = await getDoc(
+      doc(db, 'users', user.uid)
+    );
+
+    if (snap.exists()) {
+      setUserProfile(snap.data());
+    }
+
     setShowOnboarding(false);
-    // Start tour after onboarding
-    setTimeout(() => setShowTour(true), 600);
-  };
+
+    setTimeout(() => {
+      setShowTour(true);
+    }, 600);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const displayName = userProfile?.onboardingName || userProfile?.full_name || '';
   const countryFlag = userProfile?.countryFlag || '';
 
   return (
     <div className="min-h-screen bg-background flex font-body">
-      {/* {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
+    {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
       {showTour && !showOnboarding && (
         <GuidedTour onComplete={() => setShowTour(false)} />
-      )} */}
+      )}
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block">

@@ -1,3 +1,4 @@
+// lib/api.js
 import { auth } from '../Firebase/auth';
 
 const API = import.meta.env.VITE_API_URL;
@@ -9,30 +10,23 @@ export async function api(endpoint, options = {}) {
     ? await user.getIdToken()
     : null;
 
-  const isFormData =
-    options.body instanceof FormData;
+  const isFormData = options.body instanceof FormData;
 
   const headers = {
     ...(token && {
       Authorization: `Bearer ${token}`,
     }),
-
     ...options.headers,
   };
 
-  // Only set JSON content type for non-FormData requests
   if (!isFormData) {
-    headers['Content-Type'] =
-      'application/json';
+    headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(
-    `${API}${endpoint}`,
-    {
-      ...options,
-      headers,
-    }
-  );
+  const response = await fetch(`${API}${endpoint}`, {
+    ...options,
+    headers,
+  });
 
   let data;
 
@@ -57,5 +51,17 @@ export async function api(endpoint, options = {}) {
 
   return data;
 }
+
+// NEW
+api.updateMe = async (userData) => {
+  return api('/users/me', {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  });
+};
+api.auth = {
+  me: () => api('/auth/me'),
+};
+
 
 export default api;
