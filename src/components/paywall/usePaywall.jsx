@@ -75,7 +75,7 @@ export function usePaywall() {
       updates.lastLimitDate = today;
     }
 
-    await base44.auth.updateMe(updates);
+    // await base44.auth.updateMe(updates);
     setUser(u => ({ ...u, ...updates }));
     return newCount <= FREE_LIMIT;
   }, [isPaid, dailyCount, user]);

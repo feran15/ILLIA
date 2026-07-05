@@ -604,16 +604,48 @@ Requirements:
   }
 };
 
-  const generateIdeas = async () => {
-    if (!ideaNiche.trim()) return toast.error('Enter your niche first!');
+const generateIdeas = async () => {
+  if (!ideaNiche.trim()) {
+    return toast.error('Enter your niche first!');
+  }
+
+  try {
     setIdeasLoading(true);
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `Generate 8 creative, viral-worthy content ideas for ${ideaPlatform} in the niche: "${ideaNiche}". Each idea should have a catchy title and a brief 1-sentence description. Return JSON.`,
-      response_json_schema: { type: 'object', properties: { ideas: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' } } } } } }
-    });
-    setIdeas(response.ideas || []);
+
+    const result = await generateAI(`
+Generate exactly 8 creative, viral-worthy content ideas for ${ideaPlatform}.
+
+Niche:
+"${ideaNiche}"
+
+Requirements:
+- Return valid JSON only.
+- Format:
+
+{
+  "ideas": [
+    {
+      "title": "Idea title",
+      "description": "One-sentence description"
+    }
+  ]
+}
+
+- Make the ideas fresh, engaging, and platform-specific.
+- No markdown.
+- No extra text outside the JSON.
+`);
+
+    const parsed = JSON.parse(result);
+
+    setIdeas(parsed.ideas || []);
+  } catch (error) {
+    console.error('generateIdeas error:', error);
+    toast.error('Failed to generate ideas');
+  } finally {
     setIdeasLoading(false);
-  };
+  }
+};
 
   return (
     <div className="max-w-4xl mx-auto pb-20 md:pb-0">
