@@ -507,29 +507,102 @@ Respond to the user's last message helpfully.
   };
 
   const generateCaptions = async () => {
-    if (!captionTopic.trim()) return toast.error('Enter a topic first!');
-    // Daily limit check for free users
-    if (!isPaid && isAtLimit) { setShowPaywall(true); return; }
-    if (!isPaid) {
-      const allowed = await incrementCount();
-      if (!allowed) { setShowPaywall(true); return; }
+  if (!captionTopic.trim()) {
+    return toast.error('Enter a topic first!');
+  }
+
+  if (!isPaid && isAtLimit) {
+    setShowPaywall(true);
+    return;
+  }
+
+  if (!isPaid) {
+    const allowed = await incrementCount();
+
+    if (!allowed) {
+      setShowPaywall(true);
+      return;
     }
+  }
+
+  try {
     setCaptionLoading(true);
-    const newStreak = updateStreak(); setStreak(newStreak);
-    // Build personalised context
-    const purposeArr = userProfile?.contentPurpose || [];
-    const businessCtx = purposeArr.map(p => PURPOSE_CONTEXT[p]).filter(Boolean).join(', ') || 'general content creation';
-    const platformRule = PLATFORM_RULES[captionPlatform] || '';
-    const userName = userProfile?.onboardingName || userProfile?.full_name || '';
-    const useNameInCaption = userName && purposeArr.some(p => ['fashion','food','tech','personal'].includes(p)) && Math.random() < 0.2;
-    const nameHint = useNameInCaption ? `Optionally, naturally weave the creator's name "${userName}" into one caption (e.g. "${userName}'s ..."). Only if it sounds organic.` : '';
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `Generate 4 unique, ready-to-post captions for ${captionPlatform} about: "${captionTopic}".\n\nCreator context: ${businessCtx}.\nTone: ${captionTone}.\n${platformRule}\n${nameHint}\nMake each caption feel natural and distinct. Include relevant hashtags and emojis. No markdown formatting. Return JSON.`,
-      response_json_schema: { type: 'object', properties: { captions: { type: 'array', items: { type: 'string' } } } }
-    });
-    setCaptions(response.captions || []);
+
+    const newStreak = updateStreak();
+    setStreak(newStreak);
+
+    const purposeArr =
+      userProfile?.contentPurpose || [];
+
+    const businessCtx =
+      purposeArr
+        .map(p => PURPOSE_CONTEXT[p])
+        .filter(Boolean)
+        .join(', ') ||
+      'general content creation';
+
+    const platformRule =
+      PLATFORM_RULES[captionPlatform] || '';
+
+    const userName =
+      userProfile?.onboardingName ||
+      userProfile?.full_name ||
+      '';
+
+    const useNameInCaption =
+      userName &&
+      purposeArr.some(p =>
+        ['fashion', 'food', 'tech', 'personal'].includes(p)
+      ) &&
+      Math.random() < 0.2;
+
+    const nameHint = useNameInCaption
+      ? `Optionally mention "${userName}" naturally in one caption only if it sounds organic.`
+      : '';
+
+    const result = await generateAI(`
+Generate exactly 4 unique, ready-to-post captions.
+
+Topic:
+"${captionTopic}"
+
+Creator context:
+${businessCtx}
+
+Tone:
+${captionTone}
+
+Platform:
+${captionPlatform}
+
+Platform rules:
+${platformRule}
+
+${nameHint}
+
+Requirements:
+- Return ONLY the 4 captions.
+- Separate each caption with ===CAPTION===
+- Use emojis naturally.
+- Include relevant hashtags.
+- No markdown.
+- Make every caption distinctly different.
+- Sound human and authentic.
+`);
+
+    const generated = result
+      .split('===CAPTION===')
+      .map(c => c.trim())
+      .filter(Boolean);
+
+    setCaptions(generated);
+  } catch (error) {
+    console.error(error);
+    toast.error('Failed to generate captions');
+  } finally {
     setCaptionLoading(false);
-  };
+  }
+};
 
   const generateIdeas = async () => {
     if (!ideaNiche.trim()) return toast.error('Enter your niche first!');
@@ -907,7 +980,7 @@ Respond to the user's last message helpfully.
             </Button> */}
           </div>
 
-          {/* Generated images */}
+          {/* Generated images
           {generatedImages.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {generatedImages.map((img, i) => (
@@ -922,15 +995,15 @@ Respond to the user's last message helpfully.
                 </div>
               ))}
             </div>
-          )}
+          )} */}
 
-          {generatedImages.length === 0 && !imgGenerating && (
+          {/* {generatedImages.length === 0 && !imgGenerating && (
             <div className="text-center py-10 text-muted-foreground">
               <Image className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p className="font-display font-semibold">Your generated images appear here</p>
               <p className="text-sm">Enter a prompt and optionally a reference image ✨</p>
             </div>
-          )}
+          )} */}
         </TabsContent>
       </Tabs>
     </div>

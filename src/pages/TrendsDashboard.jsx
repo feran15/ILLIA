@@ -124,6 +124,7 @@ const saveContent = useMutation({
             {p.label}
           </button>
         ))}
+        <input type="text" className='p-2 text-black background-black mt-2 border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500' placeholder='Search trends...' />
       </div>
 
       {/* Trends Grid */}
