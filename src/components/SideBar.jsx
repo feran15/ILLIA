@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
+import { LogOut } from 'lucide-react';
 import { auth } from '../Firebase/config';
 import { cn } from '@/lib/utils';
 const nav = [
@@ -18,6 +19,7 @@ const nav = [
   // { href: '/studio/templates', label: 'Templates', icon: LayoutTemplate },
   // { href: '/studio/media', label: 'Media Library', icon: ImageIcon },
   { href: '/studio/profile', label: 'Profile', icon: User },
+  // { href: '/studio', label: 'Profile', icon: User },
 ];
 
 export default function Sidebar() {
@@ -34,7 +36,17 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 min-h-screen flex flex-col bg-sidebar border-r border-sidebar-border">
+    <aside className="    hidden md:flex
+    w-64
+    h-screen
+    sticky
+    top-0
+    shrink-0
+    flex-col
+    bg-sidebar
+    border-r
+    border-sidebar-border
+    overflow-y-auto">
       
       {/* Logo */}
       <div className="px-6 py-6 flex items-center gap-3">
@@ -91,12 +103,17 @@ export default function Sidebar() {
           </p>
         </div>
 
-        <button
-          onClick={handleSignOut}
-          className="mt-4 w-full rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-        >
-          Sign Out
-        </button>
+<button
+  variant="ghost"
+  onClick={() => {
+    if (window.confirm('Are you sure you want to sign out?')) {
+      handleSignOut();
+    }
+  }}
+>
+  <LogOut className="w-4 h-4 mr-2" />
+  Sign Out
+</button>
       </div>
     </aside>
   );

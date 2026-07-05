@@ -19,6 +19,7 @@ export default function TrendsDashboard() {
   const [activePlatform, setActivePlatform] = useState('twitter');
   const [trends, setTrends] = useState({});
   const [loadingPlatforms, setLoadingPlatforms] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
 
 const saveContent = useMutation({
   mutationFn: async (data) => {
@@ -84,9 +85,9 @@ const saveContent = useMutation({
   };
 
   return (
-    <div className="max-w-5xl mx-auto pb-20 md:pb-0">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20 md:pb-0">
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
@@ -101,7 +102,10 @@ const saveContent = useMutation({
         <Button
           onClick={() => fetchTrends(activePlatform)}
           disabled={isLoading}
-          className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:opacity-90 text-black font-semibold shadow-lg shadow-orange-500/30"
+          className=" w-full sm:w-auto
+    bg-gradient-to-r from-yellow-400 to-orange-500
+    hover:opacity-90 text-black font-semibold
+    shadow-lg shadow-orange-500/30"
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
           Refresh Trends
@@ -109,24 +113,57 @@ const saveContent = useMutation({
       </div>
 
       {/* Platform Tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {PLATFORMS.map(p => (
-          <button
-            key={p.id}
-            onClick={() => { setActivePlatform(p.id); if (!trends[p.id]) fetchTrends(p.id); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-              activePlatform === p.id
-                ? `bg-gradient-to-r ${p.color} text-white shadow-lg`
-                : 'bg-muted text-muted-foreground hover:text-foreground border border-border'
-            }`}
-          >
-            <div className={`w-2 h-2 rounded-full ${activePlatform === p.id ? 'bg-white' : p.dot}`} />
-            {p.label}
-          </button>
-        ))}
-        <input type="text" className='p-2 text-black background-black mt-2 border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500' placeholder='Search trends...' />
-      </div>
+  <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+  {PLATFORMS.map((p) => (
+    <button
+      key={p.id}
+      onClick={() => {
+        setActivePlatform(p.id);
 
+        if (!trends[p.id]) {
+          fetchTrends(p.id);
+        }
+      }}
+      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+        activePlatform === p.id
+          ? `bg-gradient-to-r ${p.color} text-white shadow-lg`
+          : 'bg-muted text-muted-foreground hover:text-foreground border border-border'
+      }`}
+    >
+      <div
+        className={`w-2 h-2 rounded-full ${
+          activePlatform === p.id ? 'bg-white' : p.dot
+        }`}
+      />
+
+      {p.label}
+    </button>
+  ))}
+</div>
+
+<input
+  type="text"
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      fetchSearch(searchQuery);
+    }
+  }}
+  className="
+    w-full
+    mb-6
+    p-3
+    text-foreground
+    bg-background
+    border border-border
+    rounded-xl
+    focus:outline-none
+    focus:ring-2
+    focus:ring-blue-500
+  "
+  placeholder="Search trends..."
+/>
       {/* Trends Grid */}
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -178,7 +215,13 @@ const saveContent = useMutation({
                       size="sm"
                       variant="ghost"
                       onClick={() => saveContent.mutate({ title: `Trend: ${trend.title}`, content: `${trend.description}\n\nHashtag: ${trend.hashtag || ''}`, content_type: 'idea', platform: activePlatform })}
-                      className="text-xs text-muted-foreground hover:text-primary gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="  text-xs
+  text-muted-foreground
+  hover:text-primary
+  gap-1
+  opacity-100 sm:opacity-0
+  sm:group-hover:opacity-100
+  transition-opacity"
                     >
                       <Sparkles className="w-3 h-3" /> Save idea
                     </Button>
