@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Sun, Moon, Bell } from 'lucide-react';
 import { Sparkles, Zap, Calendar, TrendingUp, Image, MessageSquare, Type, Lightbulb, Check, ChevronRight, Star, ArrowRight, Play, Menu, X } from 'lucide-react';
-
+import { useTypewriter } from '../hooks/useTypewriter';
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
   { label: 'How It Works', href: '#how-it-works' },
@@ -184,6 +184,28 @@ function AnimatedCounter({ target, suffix = '' }) {
 
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 }
+  // Add this above `export default function Landing()`, alongside your other helper components
+
+const HERO_PHRASES = ['In Minutes', 'Easily', 'Anytime', 'Anywhere'];
+
+function CyclingHeroText() {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const { displayed } = useTypewriter(HERO_PHRASES[phraseIndex], {
+    speed: 150,
+    onComplete: () => {
+      setTimeout(() => {
+        setPhraseIndex(i => (i + 1) % HERO_PHRASES.length);
+      }, 1200);
+    },
+  });
+
+  return (
+    <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+      {displayed}
+      <span className=" w-[3px] h-[0.85em] bg-primary ml-1 align-middle animate-pulse" />
+    </span>
+  );
+}
 
 export default function Landing() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -212,6 +234,9 @@ export default function Landing() {
   }, []);
 
     const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
@@ -267,14 +292,14 @@ export default function Landing() {
     <div className="absolute top-40 right-1/4 w-72 h-72 bg-secondary/20 rounded-full blur-3xl" />
     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-64 bg-accent/10 rounded-full blur-3xl" />
   </div> 
-      
-          {/* Trending Cards */}
-
-{/* LEFT RAIL */}
+      {/* LEFT RAIL */}
 <div className="hidden lg:flex flex-col gap-8 absolute left-[3%] top-28 z-10">
 
   {/* Card 1 - Creator Spotlight */}
-  <div className="w-48" style={{ animation: 'illiaFloat 6s ease-in-out infinite' }}>
+  <div
+    className="w-48 -rotate-6 hover:rotate-0 transition-transform duration-300"
+    style={{ animation: 'illiaFloatTiltLeft 6s ease-in-out infinite' }}
+  >
     <div className="bg-card border border-border rounded-2xl p-3 shadow-xl backdrop-blur-xl">
       <div className="rounded-xl overflow-hidden mb-3">
         <img src="/creator.jpeg" alt="Creator" className="w-full h-36 object-cover" />
@@ -290,7 +315,10 @@ export default function Landing() {
   </div>
 
   {/* Card 3 - Trending Hashtags */}
-  <div className="w-48" style={{ animation: 'illiaFloat 6s ease-in-out infinite 2.4s' }}>
+  <div
+    className="w-48 rotate-3 hover:rotate-0 transition-transform duration-300"
+    style={{ animation: 'illiaFloatReverseTiltRight 6s ease-in-out infinite 2.4s' }}
+  >
     <div className="bg-card border border-border rounded-2xl p-4 shadow-xl backdrop-blur-xl min-h-[150px]">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
@@ -312,7 +340,10 @@ export default function Landing() {
 <div className="hidden lg:flex flex-col gap-8 absolute right-[3%] top-28 z-10">
 
   {/* Card 2 - Time Saved Stat */}
-  <div className="w-48" style={{ animation: 'illiaFloat 6s ease-in-out infinite 1.2s' }}>
+  <div
+    className="w-48 rotate-6 hover:rotate-0 transition-transform duration-300"
+    style={{ animation: 'illiaFloatTiltRight 6s ease-in-out infinite 1.2s' }}
+  >
     <div className="bg-card border border-border rounded-2xl p-5 shadow-xl backdrop-blur-xl min-h-[150px] flex flex-col justify-between">
       <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-2">
         <Zap className="w-4 h-4 text-white" />
@@ -325,7 +356,10 @@ export default function Landing() {
   </div>
 
   {/* Card 4 - AI Caption Preview */}
-  <div className="w-48" style={{ animation: 'illiaFloatReverse 6s ease-in-out infinite 3.6s' }}>
+  <div
+    className="w-48 -rotate-3 hover:rotate-0 transition-transform duration-300"
+    style={{ animation: 'illiaFloatReverseTiltLeft 6s ease-in-out infinite 3.6s' }}
+  >
     <div className="bg-card border border-border rounded-2xl p-4 shadow-xl backdrop-blur-xl min-h-[150px] flex flex-col">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
@@ -340,6 +374,7 @@ export default function Landing() {
   </div>
 
 </div>
+
       {/* Dark Overlay */}
   {/* <div className="absolute inset-0 bg-black/60 z-0" /> */}
 
@@ -349,9 +384,9 @@ export default function Landing() {
             <Zap className="w-3.5 h-3.5" /> Content creation tools for African creators
           </div> 
           <h1 className="font-display font-bold text-5xl sm:text-6xl lg:text-7xl text-foreground leading-[1.05] mb-6">
-            Create Content{' '} 
+            Create Content{' '} <br />
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              In <br /> Minutes
+             <CyclingHeroText />
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">

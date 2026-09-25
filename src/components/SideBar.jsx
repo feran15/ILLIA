@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import SidebarTour, { hasTourCompleted } from './ui/SidebarTour';
 import {
   Sparkles,
   TrendingUp,
@@ -7,24 +8,34 @@ import {
   Zap,
   LayoutTemplate,
   Image as ImageIcon,
+  LogOut,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
-import { LogOut } from 'lucide-react';
 import { auth } from '../Firebase/config';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
+
 const nav = [
-  { href: '/studio', label: 'AI Studio', icon: Sparkles },
-  { href: '/studio/trends', label: 'Trends', icon: TrendingUp },
-  { href: '/studio/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/studio', label: 'AI Studio', icon: Sparkles, tourId: 'nav-ai-studio' },
+  { href: '/studio/trends', label: 'Trends', icon: TrendingUp, tourId: 'nav-trends' },
+  { href: '/studio/calendar', label: 'Calendar', icon: CalendarDays, tourId: 'nav-calendar' },
   // { href: '/studio/templates', label: 'Templates', icon: LayoutTemplate },
   // { href: '/studio/media', label: 'Media Library', icon: ImageIcon },
-  { href: '/studio/profile', label: 'Profile', icon: User },
-  // { href: '/studio', label: 'Profile', icon: User },
+  { href: '/studio/profile', label: 'Profile', icon: User, tourId: 'nav-profile' },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [runTour, setRunTour] = useState(false);
+
+  useEffect(() => {
+    if (!hasTourCompleted()) {
+      const t = setTimeout(() => setRunTour(true), 500);
+      return () => clearTimeout(t);
+    }
+  }, []); // <-- empty deps: run once on mount, not every render
 
   const handleSignOut = async () => {
     try {
@@ -36,7 +47,8 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="    hidden md:flex
+    <aside
+      className="hidden md:flex
     w-64
     h-screen
     sticky
@@ -46,23 +58,23 @@ export default function Sidebar() {
     bg-sidebar
     border-r
     border-sidebar-border
-    overflow-y-auto">
-      
+    overflow-y-auto"
+    >
       {/* Logo */}
-      <div className="px-6 py-6 flex items-center gap-3">
+      <div data-tour="brand" className="px-6 py-6 flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30">
           <Zap className="w-5 h-5 text-white" />
         </div>
         <Link to="/">
-        <span className="font-display font-extrabold text-xl text-foreground tracking-tight">
-          Illia<span className="text-primary">Ai</span>
-        </span>
+          <span className="font-display font-extrabold text-xl text-foreground tracking-tight">
+            Illia<span className="text-primary">Ai</span>
+          </span>
         </Link>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {nav.map(({ href, label, icon: Icon }) => {
+        {nav.map(({ href, label, icon: Icon, tourId }) => {
           const active =
             href === '/studio'
               ? location.pathname === href
@@ -72,6 +84,7 @@ export default function Sidebar() {
             <Link
               key={href}
               to={href}
+              data-tour={tourId}
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
                 active
@@ -80,12 +93,8 @@ export default function Sidebar() {
               )}
             >
               <Icon className={cn('w-5 h-5', active && 'text-primary')} />
-
               <span>{label}</span>
-
-              {active && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-              )}
+              {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
             </Link>
           );
         })}
@@ -93,28 +102,30 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="p-4">
-        <div className="rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 p-4">
-          <p className="text-xs font-semibold text-primary mb-1">
-            ✨ Pro Tip
-          </p>
-
+        <div
+          data-tour="pro-tip"
+          className="rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 p-4"
+        >
+          <p className="text-xs font-semibold text-primary mb-1">✨ Pro Tip</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
             Use AI trends to find what's hot and generate captions in seconds.
           </p>
         </div>
 
-<button
-  variant="ghost"
-  onClick={() => {
-    if (window.confirm('Are you sure you want to sign out?')) {
-      handleSignOut();
-    }
-  }}
->
-  <LogOut className="w-4 h-4 mr-2" />
-  Sign Out
-</button>
+        <button
+          onClick={() => {
+            if (window.confirm('Are you sure you want to sign out?')) {
+              handleSignOut();
+            }
+          }}
+          className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </button>
       </div>
+
+      <SidebarTour run={runTour} onFinish={() => setRunTour(false)} />
     </aside>
   );
 }

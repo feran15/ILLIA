@@ -93,8 +93,7 @@
 
 @keyframes illiaFloat {
   0%, 100% {
-    transform:translateY(20px) rotate(0deg)
-    
+    transform: translateY(20px) rotate(0deg);
   }
   50% {
     transform: translateY(-12px) rotate(1deg);
@@ -105,7 +104,7 @@
   0%, 100% {
     transform: translateY(30px) rotate(0deg);
   }
-  50%{
+  50% {
     transform: translateY(10px) rotate(-1deg);
   }
 }
@@ -116,5 +115,43 @@
   }
   50% {
     transform: scale(1.03);
+  }
+}
+
+/* --- Tilted variants for hero cards --- */
+
+@keyframes illiaFloatTiltLeft {
+  0%, 100% {
+    transform: translateY(20px) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(-5deg);
+  }
+}
+
+@keyframes illiaFloatTiltRight {
+  0%, 100% {
+    transform: translateY(20px) rotate(6deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(5deg);
+  }
+}
+
+@keyframes illiaFloatReverseTiltLeft {
+  0%, 100% {
+    transform: translateY(30px) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(10px) rotate(-3deg);
+  }
+}
+
+@keyframes illiaFloatReverseTiltRight {
+  0%, 100% {
+    transform: translateY(30px) rotate(4deg);
+  }
+  50% {
+    transform: translateY(10px) rotate(3deg);
   }
 }
