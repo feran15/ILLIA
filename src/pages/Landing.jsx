@@ -258,22 +258,100 @@ export default function Landing() {
           </div>
         )}
       </nav>
-
+        
       {/* HERO */}
       <section className="relative pt-32 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
         {/* Background glows */}
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-40 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-40 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
+    <div className="absolute top-40 right-1/4 w-72 h-72 bg-secondary/20 rounded-full blur-3xl" />
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-64 bg-accent/10 rounded-full blur-3xl" />
+  </div> 
+      
+          {/* Trending Cards */}
+
+{/* LEFT RAIL */}
+<div className="hidden lg:flex flex-col gap-8 absolute left-[3%] top-28 z-10">
+
+  {/* Card 1 - Creator Spotlight */}
+  <div className="w-48" style={{ animation: 'illiaFloat 6s ease-in-out infinite' }}>
+    <div className="bg-card border border-border rounded-2xl p-3 shadow-xl backdrop-blur-xl">
+      <div className="rounded-xl overflow-hidden mb-3">
+        <img src="/creator.jpeg" alt="Creator" className="w-full h-36 object-cover" />
+      </div>
+      <div className="flex items-center gap-1 mb-1">
+        {[...Array(5)].map((_, i) => (
+          <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+        ))}
+      </div>
+      <div className="text-xs font-semibold text-foreground">Amara Okafor</div>
+      <div className="text-[11px] text-muted-foreground">82k followers</div>
+    </div>
+  </div>
+
+  {/* Card 3 - Trending Hashtags */}
+  <div className="w-48" style={{ animation: 'illiaFloat 6s ease-in-out infinite 2.4s' }}>
+    <div className="bg-card border border-border rounded-2xl p-4 shadow-xl backdrop-blur-xl min-h-[150px]">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+          <TrendingUp className="w-3.5 h-3.5 text-white" />
+        </div>
+        <span className="text-xs font-semibold text-foreground">Trending</span>
+      </div>
+      <div className="space-y-2">
+        {['#CreatorEconomy', '#AIContent', '#LinkedInTips'].map(t => (
+          <div key={t} className="text-xs text-muted-foreground">{t}</div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{/* RIGHT RAIL */}
+<div className="hidden lg:flex flex-col gap-8 absolute right-[3%] top-28 z-10">
+
+  {/* Card 2 - Time Saved Stat */}
+  <div className="w-48" style={{ animation: 'illiaFloat 6s ease-in-out infinite 1.2s' }}>
+    <div className="bg-card border border-border rounded-2xl p-5 shadow-xl backdrop-blur-xl min-h-[150px] flex flex-col justify-between">
+      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-2">
+        <Zap className="w-4 h-4 text-white" />
+      </div>
+      <div>
+        <div className="font-display font-black text-3xl text-foreground">98%</div>
+        <div className="text-xs text-muted-foreground mt-1">Time saved on content every week</div>
+      </div>
+    </div>
+  </div>
+
+  {/* Card 4 - AI Caption Preview */}
+  <div className="w-48" style={{ animation: 'illiaFloatReverse 6s ease-in-out infinite 3.6s' }}>
+    <div className="bg-card border border-border rounded-2xl p-4 shadow-xl backdrop-blur-xl min-h-[150px] flex flex-col">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+          <MessageSquare className="w-3.5 h-3.5 text-white" />
+        </div>
+        <span className="text-xs font-semibold text-foreground">AI Assistant</span>
+      </div>
+      <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
+        "Here are 4 caption options tuned for your brand voice..."
+      </p>
+    </div>
+  </div>
+
+</div>
+      {/* Dark Overlay */}
+  {/* <div className="absolute inset-0 bg-black/60 z-0" /> */}
+
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
             <Zap className="w-3.5 h-3.5" /> Content creation tools for African creators
           </div> 
           <h1 className="font-display font-bold text-5xl sm:text-6xl lg:text-7xl text-foreground leading-[1.05] mb-6">
-            Create Content{' '}
+            Create Content{' '} 
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              In Minutes
+              In <br /> Minutes
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
