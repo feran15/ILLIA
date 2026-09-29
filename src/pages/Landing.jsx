@@ -1,7 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Bell } from 'lucide-react';
-import { Sparkles, Zap, Calendar, TrendingUp, Image, MessageSquare, Type, Lightbulb, Check, ChevronRight, Star, ArrowRight, Play, Menu, X } from 'lucide-react';
+import { Sun, Moon, Bell, Images } from 'lucide-react';
+import {
+  Sparkles,
+  Zap,
+  Calendar,
+  TrendingUp,
+  Image,
+  MessageSquare,
+  Type,
+  Lightbulb,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  Star,
+  ArrowRight,
+  Play,
+  Menu,
+  X
+} from 'lucide-react';
 import { useTypewriter } from '../hooks/useTypewriter';
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
@@ -186,7 +203,7 @@ function AnimatedCounter({ target, suffix = '' }) {
 }
   // Add this above `export default function Landing()`, alongside your other helper components
 
-const HERO_PHRASES = ['In Minutes', 'Easily', 'Anytime', 'Anywhere'];
+const HERO_PHRASES = ['That Connects.','In Minutes.', 'Easily.', 'Anytime.', 'Anywhere.'];
 
 function CyclingHeroText() {
   const [phraseIndex, setPhraseIndex] = useState(0);
@@ -210,7 +227,85 @@ function CyclingHeroText() {
 export default function Landing() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
- const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+    const [currentImage, setCurrentImage] = useState(0);
+    const PLATFORMS = [
+  {
+    name: 'Instagram',
+    d: 'M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM17.2 5.8a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2z',
+  },
+  {
+    name: 'TikTok',
+    d: 'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z',
+  },
+  {
+    name: 'LinkedIn',
+    d: 'M4 2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm1.6 7.5V19h3V9.5h-3zM7.1 5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5zM10.5 9.5V19h3v-5c0-1.3.6-2.2 1.8-2.2s1.6.9 1.6 2.2v5h3v-5.7c0-2.5-1.3-4-3.4-4-1.3 0-2.2.6-3 1.6V9.5h-3z',
+  },
+  {
+    name: 'Twitter / X',
+    d: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z',
+  },
+   {
+    name: 'Facebook',
+    d: 'M14 22v-8.5h2.9l.5-3.4H14V8c0-1 .4-1.7 1.8-1.7h1.7V3.3c-.3 0-1.4-.2-2.6-.2-2.6 0-4.3 1.6-4.3 4.4v2.6H7.7v3.4h2.9V22z',
+  },
+  {
+    name: 'YouTube',
+    d: 'M21.6 7.2a2.6 2.6 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.6 2.6 0 0 0 2.4 7.2C2 8.8 2 12 2 12s0 3.2.4 4.8a2.6 2.6 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.6 2.6 0 0 0 1.8-1.8C22 15.2 22 12 22 12s0-3.2-.4-4.8zM10 15V9l5.2 3L10 15z',
+  },
+];
+
+const Group = ({ hidden = false }) => (
+  <div
+    className="flex shrink-0 items-center gap-12 pr-12"
+    aria-hidden={hidden}
+  >
+    {PLATFORMS.map((platform) => (
+      <div
+        key={platform.name}
+        className="group flex items-center gap-3 whitespace-nowrap font-display font-bold text-lg text-foreground/60 transition-all duration-300 hover:text-foreground"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-7 w-7 fill-current transition-transform duration-300 group-hover:scale-110"
+          aria-hidden="true"
+        >
+          <path
+            d={platform.d}
+            fillRule={platform.fillRule}
+          />
+        </svg>
+
+        <span>{platform.name}</span>
+      </div>
+    ))}
+  </div>
+);
+
+// Image Reels
+const images = [
+    "/AI.jpeg",
+    "/Blogger.jpeg",
+    "/Illia.jpeg",
+    "/Aii.jpeg"
+  ];
+
+ const nextImage = () => {
+  setCurrentImage((prev) => (prev + 1) % images.length)
+ };
+ 
+ const previousImage = () => {
+  setCurrentImage((prev) => (prev + 1) % images.length)
+ };
+ // Auto move
+useEffect(() => {
+  const interval = setInterval(() => {
+    setCurrentImage((prev) => (prev + 1) % images.length);
+  }, 5000); // changes every 4 seconds
+
+  return () => clearInterval(interval);
+}, []);
 
 
   useEffect(() => {
@@ -235,6 +330,7 @@ export default function Landing() {
 
     const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
+    
 
 
   return (
@@ -292,131 +388,147 @@ export default function Landing() {
     <div className="absolute top-40 right-1/4 w-72 h-72 bg-secondary/20 rounded-full blur-3xl" />
     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-64 bg-accent/10 rounded-full blur-3xl" />
   </div> 
-      {/* LEFT RAIL */}
-<div className="hidden lg:flex flex-col gap-8 absolute left-[3%] top-28 z-10">
 
-  {/* Card 1 - Creator Spotlight */}
-  <div
-    className="w-48 -rotate-6 hover:rotate-0 transition-transform duration-300"
-    style={{ animation: 'illiaFloatTiltLeft 6s ease-in-out infinite' }}
-  >
-    <div className="bg-card border border-border rounded-2xl p-3 shadow-xl backdrop-blur-xl">
-      <div className="rounded-xl overflow-hidden mb-3">
-        <img src="/creator.jpeg" alt="Creator" className="w-full h-36 object-cover" />
-      </div>
-      <div className="flex items-center gap-1 mb-1">
-        {[...Array(5)].map((_, i) => (
-          <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-        ))}
-      </div>
-      <div className="text-xs font-semibold text-foreground">Amara Okafor</div>
-      <div className="text-[11px] text-muted-foreground">82k followers</div>
+       {/* HERO CONTENT */}
+<div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+
+  {/* LEFT - TEXT */}
+  <div>
+
+    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
+      <Zap className="w-3.5 h-3.5" />
+      Content creation tools for African creators
     </div>
+
+    <h1 className="font-display font-bold text-5xl sm:text-6xl lg:text-7xl text-foreground leading-[1.05] mb-6">
+      Create Content <br />
+
+      <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+        <CyclingHeroText />
+      </span>
+    </h1>
+
+    <p className="text-xl text-muted-foreground max-w-xl mb-10 leading-relaxed">
+      IlliaAi is your AI studio for generating captions, viral post ideas,
+      stunning images, and a full content strategy in seconds, not hours.
+    </p>
+
+    <div className="flex flex-col sm:flex-row gap-4">
+
+      <Link
+        to="/login"
+        className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl
+        bg-gradient-to-r from-primary to-secondary
+        text-white font-bold text-lg
+        hover:opacity-90 transition-all
+        shadow-xl shadow-primary/30 hover:scale-105"
+      >
+        Start Creating Free
+        <ArrowRight className="w-5 h-5" />
+      </Link>
+
+      <a
+        href="#how-it-works"
+        className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl
+        border border-border text-foreground font-semibold text-lg
+        hover:bg-muted transition-colors"
+      >
+        <Play className="w-4 h-4" />
+        See How It Works
+      </a>
+
+    </div>
+
   </div>
 
-  {/* Card 3 - Trending Hashtags */}
-  <div
-    className="w-48 rotate-3 hover:rotate-0 transition-transform duration-300"
-    style={{ animation: 'illiaFloatReverseTiltRight 6s ease-in-out infinite 2.4s' }}
-  >
-    <div className="bg-card border border-border rounded-2xl p-4 shadow-xl backdrop-blur-xl min-h-[150px]">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-          <TrendingUp className="w-3.5 h-3.5 text-white" />
-        </div>
-        <span className="text-xs font-semibold text-foreground">Trending</span>
-      </div>
-      <div className="space-y-2">
-        {['#CreatorEconomy', '#AIContent', '#LinkedInTips'].map(t => (
-          <div key={t} className="text-xs text-muted-foreground">{t}</div>
-        ))}
-      </div>
-    </div>
-  </div>
 
-</div>
+ {/* RIGHT - SLIDING IMAGE CAROUSEL */}
+<div className="flex justify-center lg:justify-end">
+  <div className="relative w-full max-w-xl">
 
-{/* RIGHT RAIL */}
-<div className="hidden lg:flex flex-col gap-8 absolute right-[3%] top-28 z-10">
+    {/* Carousel window */}
+    <div className="overflow-hidden rounded-2xl">
 
-  {/* Card 2 - Time Saved Stat */}
-  <div
-    className="w-48 rotate-6 hover:rotate-0 transition-transform duration-300"
-    style={{ animation: 'illiaFloatTiltRight 6s ease-in-out infinite 1.2s' }}
-  >
-    <div className="bg-card border border-border rounded-2xl p-5 shadow-xl backdrop-blur-xl min-h-[150px] flex flex-col justify-between">
-      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-2">
-        <Zap className="w-4 h-4 text-white" />
-      </div>
-      <div>
-        <div className="font-display font-black text-3xl text-foreground">98%</div>
-        <div className="text-xs text-muted-foreground mt-1">Time saved on content every week</div>
-      </div>
-    </div>
-  </div>
-
-  {/* Card 4 - AI Caption Preview */}
-  <div
-    className="w-48 -rotate-3 hover:rotate-0 transition-transform duration-300"
-    style={{ animation: 'illiaFloatReverseTiltLeft 6s ease-in-out infinite 3.6s' }}
-  >
-    <div className="bg-card border border-border rounded-2xl p-4 shadow-xl backdrop-blur-xl min-h-[150px] flex flex-col">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-          <MessageSquare className="w-3.5 h-3.5 text-white" />
-        </div>
-        <span className="text-xs font-semibold text-foreground">AI Assistant</span>
-      </div>
-      <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">
-        "Here are 4 caption options tuned for your brand voice..."
-      </p>
-    </div>
-  </div>
-
-</div>
-
-      {/* Dark Overlay */}
-  {/* <div className="absolute inset-0 bg-black/60 z-0" /> */}
-
-
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
-            <Zap className="w-3.5 h-3.5" /> Content creation tools for African creators
-          </div> 
-          <h1 className="font-display font-bold text-5xl sm:text-6xl lg:text-7xl text-foreground leading-[1.05] mb-6">
-            Create Content{' '} <br />
-            <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-             <CyclingHeroText />
-            </span>
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            IlliaAi is your AI studio for generating captions, viral post ideas, stunning images, and a full content strategy in seconds, not hours.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link to="/login" className="flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-lg hover:opacity-90 transition-all shadow-xl shadow-primary/30 hover:scale-105">
-              Start Creating Free <ArrowRight className="w-5 h-5" />
-            </Link>
-            <a href="#how-it-works" className="flex items-center gap-2 px-8 py-4 rounded-xl border border-border text-foreground font-semibold text-lg hover:bg-muted transition-colors">
-              <Play className="w-4 h-4" /> See How It Works
-            </a>
+      {/* Sliding track */}
+      <div
+        className="flex transition-transform duration-700 ease-in-out"
+        style={{
+          transform: `translateX(-${currentImage * 100}%)`,
+        }}
+      >
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className="w-full min-w-full flex-shrink-0"
+          >
+            <img
+              src={image}
+              alt={`IlliaAi ${index + 1}`}
+              className="w-full h-[420px] lg:h-[500px] object-cover"
+            />
           </div>
+        ))}
+      </div>
 
-          {/* Stats
-          <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
-            {[
-              { label: 'Active Creators', target: 12000, suffix: '+' },
-              { label: 'Captions Generated', target: 500000, suffix: '+' },
-              { label: 'Hours Saved', target: 98, suffix: '%' },
-            ].map(s => (
-              <div key={s.label} className="text-center">
-                <div className="font-display font-bold text-3xl text-foreground">
-                  <AnimatedCounter target={s.target} suffix={s.suffix} />
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div> */}
-        </div>
+    </div>
+
+    {/* LEFT ARROW */}
+    <button
+      onClick={previousImage}
+      className="
+        absolute left-3 top-1/2 -translate-y-1/2
+        w-11 h-11 rounded-full
+        bg-black/50 backdrop-blur-md
+        border border-white/20
+        text-white
+        flex items-center justify-center
+        hover:bg-black/70
+        hover:scale-110
+        transition-all
+        z-10
+      "
+    >
+      <ChevronLeft className="w-5 h-5" />
+    </button>
+
+    {/* RIGHT ARROW */}
+    <button
+      onClick={nextImage}
+      className="
+        absolute right-3 top-1/2 -translate-y-1/2
+        w-11 h-11 rounded-full
+        bg-black/50 backdrop-blur-md
+        border border-white/20
+        text-white
+        flex items-center justify-center
+        hover:bg-black/70
+        hover:scale-110
+        transition-all
+        z-10
+      "
+    >
+      <ChevronRight className="w-5 h-5" />
+    </button>
+
+    {/* DOTS */}
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+      {images.map((_, index) => (
+        <button
+          key={index}
+          onClick={() => setCurrentImage(index)}
+          className={`h-2 rounded-full transition-all ${
+            currentImage === index
+              ? "w-6 bg-white"
+              : "w-2 bg-white/50"
+          }`}
+        />
+      ))}
+    </div>
+
+  </div>
+</div>
+
+</div>
 
         {/* Hero app mockup */}
         <div className="max-w-4xl mx-auto mt-16 relative">
@@ -490,17 +602,61 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* SOCIAL PROOF LOGOS */}
-      <section className="py-12 px-4 border-y border-border bg-muted/30">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-sm text-muted-foreground mb-8">Trusted by creators on every major platform</p>
-          <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
-            {['Instagram', 'TikTok', 'LinkedIn', 'Twitter / X', 'Facebook', 'YouTube'].map(p => (
-              <span key={p} className="font-display font-bold text-lg text-foreground">{p}</span>
-            ))}
+                <section className="py-12 px-4 border-y border-border bg-muted/30 overflow-hidden">
+
+      <style>{`
+        @keyframes logo-marquee {
+          from {
+            transform: translateX(0);
+          }
+
+          to {
+            transform: translateX(-50%);
+          }
+        }
+
+        .logo-marquee-track {
+          animation: logo-marquee 30s linear infinite;
+          will-change: transform;
+        }
+
+        .logo-marquee:hover .logo-marquee-track {
+          animation-play-state: paused;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .logo-marquee-track {
+            animation: none;
+          }
+        }
+      `}</style>
+
+      <div className="max-w-5xl mx-auto text-center">
+
+        <p className="text-sm text-muted-foreground mb-8">
+          Trusted by creators across every major platform
+        </p>
+
+        <div
+          className="logo-marquee overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              'linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%)',
+            maskImage:
+              'linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%)',
+          }}
+        >
+          <div className="logo-marquee-track flex w-max">
+
+            <Group />
+
+            <Group hidden />
+
           </div>
         </div>
-      </section>
+
+      </div>
+    </section>
 
       {/* FEATURES */}
       <section id="features" className="py-24 px-4 sm:px-6 lg:px-8">

@@ -155,3 +155,16 @@
     transform: translateY(10px) rotate(3deg);
   }
 }
+@keyframes slide {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(-200% - 32px));
+  }
+}
+
+.animate-slide {
+  animation: slide 12s linear infinite;
+}
