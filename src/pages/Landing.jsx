@@ -285,10 +285,12 @@ const Group = ({ hidden = false }) => (
 
 // Image Reels
 const images = [
-    "/AI.jpeg",
-    "/Blogger.jpeg",
-    "/Illia.jpeg",
-    "/Aii.jpeg"
+    // "/AI.jpeg",
+    // "/Blogger.jpeg",
+    // "/Illia.jpeg",
+    // "/Aii.jpeg"
+    "/PG1.jpeg",
+    "/PG2.jpeg"
   ];
 
  const nextImage = () => {
