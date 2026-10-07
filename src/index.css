@@ -168,3 +168,14 @@
 .animate-slide {
   animation: slide 12s linear infinite;
 }
+/* The progress bar IS the autoplay timer: it fills, then onAnimationEnd advances the slide.
+   Pausing the animation therefore pauses autoplay with it. */
+@keyframes testimonial-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.t-progress {
+  transform-origin: left;
+  animation: testimonial-progress var(--dur, 7000ms) linear forwards;
+}
+.t-paused .t-progress { animation-play-state: paused; }

@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from './lib/AuthContext';
-import UserNotRegisteredError from './components/UserNotRegisteredError';
+// import UserNotRegisteredError from './components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 
 // Pages
@@ -42,7 +42,7 @@ const AuthenticatedApp = () => {
   // Auth errors
   if (authError) {
     if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
+      // return <UserNotRegisteredError />;
     }
 
     if (authError.type === 'auth_required') {
