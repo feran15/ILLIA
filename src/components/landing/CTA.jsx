@@ -57,7 +57,7 @@ function PersonAvatar({ src, alt }) {
 function BrandBadge({ className = '' }) {
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full bg-[#e8f75c] text-[#2d1b2b] ${className}`}
+      className={`flex shrink-0 items-center justify-center rounded-full   text-[#2d1b2b] ${className}`}
     >
       <Sparkles
         className="h-1/2 w-1/2"

@@ -8,6 +8,7 @@ import Features from '../components/landing/Features';
 import HowItWorks from '../components/landing/HowitWorks';
 import Testimonials from '../components/landing/Testimonials';
 import CTA from '../components/landing/CTA';
+import AnalyticsShowcase from '../components/landing/AnalyticsShowcase';
 import Footer from '../components/landing/Footer';
 
 export default function Landing() {
@@ -96,6 +97,9 @@ export default function Landing() {
       {/* TESTIMONIALS */}
       <Testimonials />
 
+      {/* Analytics */}
+        <AnalyticsShowcase/>
+        
       {/* CTA */}
       <CTA />
 
