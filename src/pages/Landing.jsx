@@ -85,9 +85,11 @@ export default function Landing() {
 
       {/* PLATFORMS */}
       <PlatformMarquee />
+      {/* Analytics */}
+        <AnalyticsShowcase/>
 
       {/* FEATURES */}
-      <Features />
+      {/* <Features /> */}
 
       {/* HOW IT WORKS */}
       <HowItWorks
@@ -97,8 +99,6 @@ export default function Landing() {
       {/* TESTIMONIALS */}
       <Testimonials />
 
-      {/* Analytics */}
-        <AnalyticsShowcase/>
         
       {/* CTA */}
       <CTA />
