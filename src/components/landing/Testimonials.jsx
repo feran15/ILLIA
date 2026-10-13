@@ -162,18 +162,18 @@ export default function Results() {
   return (
     <section
       id="results"
-      className="bg-[#fbf8ef] px-4 py-16 text-[#17140d] sm:px-6 sm:py-20 lg:px-8 lg:py-24"
+      className="px-4 py-16 text-[#17140d] sm:px-6 sm:py-20 lg:px-8 lg:py-24"
     >
       <div className="mx-auto max-w-6xl">
         {/* Section heading */}
         <header className="mx-auto mb-12 max-w-2xl text-center">
           <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#e8e1d4] bg-white/70 px-4 py-2 text-xs font-bold tracking-wider text-violet-700">
             <span className="h-2 w-2 rounded-full bg-violet-500" />
-            THE ILLIAAI DIFFERENCE
+            THE ILLIA AI DIFFERENCE
           </span>
 
-          <h2 className="mb-5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-            Same creators. Same posts. Better captions.
+          <h2 className="mb-5 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+            Same creators. Same posts. <span className="text-[#AD39D3] font-semibold">Better captions.</span> 
           </h2>
 
           <p className="mx-auto max-w-xl text-base leading-7 text-[#716d63] sm:text-lg">

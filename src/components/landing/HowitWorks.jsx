@@ -18,7 +18,7 @@ export default function HowItWorks({
   return (
     <section
       id="how-it-works"
-      className="relative mx-auto min-h-[460px] w-full max-w-[1680px] overflow-hidden bg-[#fbf8ef] px-6 py-24 text-[#1a1408] dark:bg-[#17140d] dark:text-[#f3eedf] sm:min-h-[495px]"
+      className="relative mx-auto min-h-[460px] w-full max-w-[1680px] overflow-hidden  px-6 py-24 text-[#1a1408] dark:bg-[#17140d] dark:text-[#f3eedf] sm:min-h-[495px]"
     >
       {DEFAULT_PEOPLE.map((person, index) => (
         <Avatar

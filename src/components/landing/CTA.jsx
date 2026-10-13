@@ -110,7 +110,7 @@ export default function Faq({
               lg:text-6xl
             "
           >
-            YOU ASKED? ILLIA ANSWERS
+            YOU ASKED? <span className='text-[#AD39D3]'> ILLIA ANSWERS</span>
           </h2>
 
           <p
