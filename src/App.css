@@ -111,9 +111,9 @@
   gap: 8px;
   margin: 32px 0 0;
 
-  .logo {
+  /* .logo {
     height: 18px;
-  }
+  } */
 
   a {
     color: var(--text-h);
