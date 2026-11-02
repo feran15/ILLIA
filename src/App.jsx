@@ -6,11 +6,11 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from './lib/AuthContext';
 // import UserNotRegisteredError from './components/UserNotRegisteredError';
-import ScrollToTop from './components/ScrollToTop';
+import ScrollToTop from './components/Studio/ScrollToTop';
 
 // Pages
 import Landing from './pages/Landing';
-import LayOut from './components/LayOut';
+import LayOut from './components/Studio/LayOut';
 import Home from './pages/Home';
 import TrendsDashboard from './pages/TrendsDashboard';
 import ContentCalendar from './pages/ContentCalendar';
@@ -21,6 +21,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Create from "./components/Studio/Create"
 
 const AuthenticatedApp = () => {
   const {
@@ -60,14 +61,52 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      <Route element={<LayOut />}>
-        <Route path="/studio" element={<Home />} />
-        <Route path="/studio/trends" element={<TrendsDashboard />} />
-        <Route path="/studio/calendar" element={<ContentCalendar />} />
-        <Route path="/studio/profile" element={<Profile />} />
-        {/* <Route path="/studio/templates" element={<Templates />} />
-        <Route path="/studio/media" element={<MediaLibrary />} /> */}
-      </Route>
+
+<Route
+  path="/studio"
+  element={
+    <LayOut>
+      <Home />
+    </LayOut>
+  }
+/>
+
+<Route
+  path="/studio/create"
+  element={
+    <LayOut>
+      <Create />
+    </LayOut>
+  }
+/>
+
+<Route
+  path="/studio/trends"
+  element={
+    <LayOut>
+      <TrendsDashboard />
+    </LayOut>
+  }
+/>
+
+<Route
+  path="/studio/calendar"
+  element={
+    <LayOut>
+      <ContentCalendar />
+    </LayOut>
+  }
+/>
+
+<Route
+  path="/studio/profile"
+  element={
+    <LayOut>
+      <Profile />
+    </LayOut>
+  }
+/>
+
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>

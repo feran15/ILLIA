@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LayoutTemplate, Plus, Star, Trash2, Edit2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
-import TemplateFormModal from '@/components/TemplateFormModal';
+import TemplateFormModal from '../components/Studio/TemplateFormModal';
 
 const PLATFORM_COLORS = {
   linkedin: 'bg-blue-500', instagram: 'bg-pink-500',

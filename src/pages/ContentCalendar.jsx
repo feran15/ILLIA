@@ -3,7 +3,7 @@
   import { Button } from '@/components/ui/button';
   import { Badge } from '@/components/ui/badge';
   import { CalendarDays, Plus, ChevronLeft, ChevronRight, Edit2, Trash2, Clock, Bell } from 'lucide-react';
-  import PostFormModal from '@/components/PostFormModal';
+  import PostFormModal from '../components/Studio/PostFormModal';
   import { toast } from 'sonner';
   import api from'../lib/api';
   import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addMonths, subMonths, isToday } from 'date-fns';

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 // import { base44 } from '@/api/base44Client';
-import { auth } from '../Firebase/auth';
-import { db } from '../Firebase/config'; // adjust path if needed
+import { auth } from '../../Firebase/auth';
+import { db } from '../../Firebase/config'; // adjust path if needed
 import { doc, setDoc } from 'firebase/firestore';
 import { X, ChevronRight } from 'lucide-react';
 

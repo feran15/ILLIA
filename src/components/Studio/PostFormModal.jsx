@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2, Clock } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api } from '../lib/CalendarApi';
+import { api } from '../../lib/CalendarApi';
 const PLATFORMS = ['linkedin', 'instagram', 'twitter', 'facebook', 'tiktok'];
 
 const BEST_TIMES = {

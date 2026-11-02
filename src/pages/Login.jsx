@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
-import GoogleIcon from "../components/Googleicon";
-import AuthLayout from "@/components/AuthLayout";
+import GoogleIcon from "../components/Studio/Googleicon";
+import AuthLayout from "../components/Studio/AuthLayout";
 import { useNavigate } from "react-router-dom";
 // import GoogleIcon from "@/components/GoogleIcon";
 
