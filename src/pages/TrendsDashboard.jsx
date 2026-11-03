@@ -1,245 +1,384 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp, RefreshCw, Loader2, Sparkles, Flame, ArrowUpRight } from 'lucide-react';
-import { toast } from 'sonner';
-import api from '../lib/api';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { AlertCircle, Copy, PenLine, RefreshCw, Search, TrendingUp } from "lucide-react";
+
+/* ------------------------------------------------------------------ */
+/* Data: wire this part to your existing trends request                */
+/* ------------------------------------------------------------------ */
+
+// Set to false once fetchTrends below calls your real API.
+const USE_SAMPLE_DATA = true;
+
+const SAMPLE = [
+  ["Behind-the-scenes content", "Creator strategy", 482000],
+  ["Small business tips", "Business", 361000],
+  ["Day in my life", "Lifestyle", 295000],
+  ["Afrobeats new releases", "Music", 244000],
+  ["Personal storytelling", "Content format", 198000],
+  ["Educational carousels", "Engagement", 143000],
+  ["Side hustle ideas", "Business", 121000],
+  ["Get ready with me", "Lifestyle", 96000],
+  ["Productivity routines", "Self growth", 74000],
+  ["Brand collaborations", "Creator strategy", 52000],
+].map(([title, category, volume]) => ({ title, category, volume }));
+
+async function fetchTrends(platformId) {
+  if (USE_SAMPLE_DATA) {
+    await new Promise((r) => setTimeout(r, 700));
+    return SAMPLE;
+  }
+  // TODO: replace with your existing request. It should return an array of
+  // trends. Fields called title/name/topic/hashtag, category/type and
+  // volume/tweet_volume/posts/count are picked up automatically.
+  // const res = await fetch(`/api/trends?platform=${platformId}`);
+  // return (await res.json()).trends;
+  throw new Error("Connect fetchTrends to your trends API");
+}
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
 
 const PLATFORMS = [
-  { id: 'twitter', label: 'X / Twitter', color: 'from-sky-500 to-blue-600', dot: 'bg-sky-400' },
-  { id: 'instagram', label: 'Instagram', color: 'from-pink-500 to-purple-600', dot: 'bg-pink-400' },
-  { id: 'linkedin', label: 'LinkedIn', color: 'from-blue-600 to-blue-800', dot: 'bg-blue-400' },
-  { id: 'tiktok', label: 'TikTok', color: 'from-red-500 to-pink-600', dot: 'bg-red-400' },
-  { id: 'facebook', label: 'Facebook', color: 'from-blue-500 to-indigo-600', dot: 'bg-indigo-400' },
+  { id: "twitter", label: "X / Twitter", color: "#38BDF8" },
+  { id: "instagram", label: "Instagram", color: "#F472B6" },
+  { id: "linkedin", label: "LinkedIn", color: "#60A5FA" },
+  { id: "tiktok", label: "TikTok", color: "#FB7185" },
+  { id: "facebook", label: "Facebook", color: "#A5B4FC" },
 ];
 
-export default function TrendsDashboard() {
-  const queryClient = useQueryClient();
-  const [activePlatform, setActivePlatform] = useState('twitter');
-  const [trends, setTrends] = useState({});
-  const [loadingPlatforms, setLoadingPlatforms] = useState({});
-  const [searchQuery, setSearchQuery] = useState('');
+const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
-const saveContent = useMutation({
-  mutationFn: async (data) => {
-    console.log('Saving idea:', data);
+function parseVolume(v) {
+  if (v == null || v === "") return null;
+  if (typeof v === "number") return v;
+  const m = String(v).trim().match(/^([\d.,]+)\s*([kmb])?/i);
+  if (!m) return null;
+  const mult = { k: 1e3, m: 1e6, b: 1e9 }[(m[2] || "").toLowerCase()] || 1;
+  return parseFloat(m[1].replace(/,/g, "")) * mult;
+}
 
-    // TODO:
-    // await api('/api/content/save', {
-    //   method: 'POST',
-    //   body: JSON.stringify(data),
-    // });
-
-    return data;
-  },
-
-  onSuccess: () => {
-    toast.success(
-      'Saved! Check your AI Studio to craft a post.'
-    );
-  },
-
-  onError: (err) => {
-    toast.error(err.message);
-  },
-});
-  const fetchTrends = async (platformId) => {
-  try {
-    setLoadingPlatforms(prev => ({
-      ...prev,
-      [platformId]: true,
-    }));
-
-    const res = await api(`/api/trends/${platformId}`);
-
-    console.log('TRENDS RESPONSE:', res);
-
-    setTrends(prev => ({
-      ...prev,
-      [platformId]: res.trends || [],
-    }));
-  } catch (err) {
-    console.error(err);
-
-    toast.error(
-      err.message || 'Failed to load trends'
-    );
-  } finally {
-    setLoadingPlatforms(prev => ({
-      ...prev,
-      [platformId]: false,
-    }));
-  }
-};
-
-  const platform = PLATFORMS.find(p => p.id === activePlatform);
-  const currentTrends = trends[activePlatform] || [];
-  const isLoading = loadingPlatforms[activePlatform];
-
-  const engagementColor = (level) => {
-    if (!level) return 'text-muted-foreground';
-    if (level.toLowerCase().includes('viral')) return 'text-red-400';
-    if (level.toLowerCase().includes('high')) return 'text-yellow-400';
-    return 'text-green-400';
+function normalize(raw, i) {
+  const title = raw.title || raw.name || raw.topic || raw.hashtag || String(raw);
+  return {
+    id: `${i}-${title}`,
+    rank: i + 1,
+    title,
+    category: raw.category || raw.type || "",
+    volume: parseVolume(raw.volume ?? raw.tweet_volume ?? raw.posts ?? raw.count),
   };
+}
 
+function timeAgo(ts) {
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ago`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Pieces                                                              */
+/* ------------------------------------------------------------------ */
+
+function Meta({ trend, className = "" }) {
+  const parts = [trend.category, trend.volume != null ? `${compact.format(trend.volume)} posts` : ""].filter(Boolean);
+  return parts.length ? <p className={className}>{parts.join(" · ")}</p> : null;
+}
+
+function FeaturedTrend({ trend, platform, onCreate, onCopy }) {
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20 md:pb-0">
-      {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-display text-3xl font-bold text-foreground">Trends Dashboard</h1>
-              <p className="text-muted-foreground text-sm">Real-time top 10 trending topics per platform</p>
-            </div>
-          </div>
-        </div>
-        <Button
-          onClick={() => fetchTrends(activePlatform)}
-          disabled={isLoading}
-          className=" w-full sm:w-auto
-    bg-gradient-to-r from-yellow-400 to-orange-500
-    hover:opacity-90 text-black font-semibold
-    shadow-lg shadow-orange-500/30"
+    <section
+      className="relative overflow-hidden rounded-[28px] p-5 text-white sm:p-8"
+      style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${platform.color} 30%, #241528) 0%, #2A1733 75%)` }}
+    >
+      <p className="text-[13px] font-bold text-white/70">Number one on {platform.label}</p>
+      <h2 className="mt-3 max-w-3xl break-words text-[30px] font-black leading-[1.08] tracking-[-1px] sm:text-[48px]">
+        {trend.title}
+      </h2>
+      <Meta trend={trend} className="mt-3 text-sm text-white/65" />
+
+      <div className="mt-6 flex flex-wrap gap-2.5">
+        <button
+          type="button"
+          onClick={() => onCreate(trend)}
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-5 text-[13px] font-extrabold text-[#2A1733] hover:bg-violet-50"
         >
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          Refresh Trends
-        </Button>
+          <PenLine size={16} />
+          Write a post about this
+        </button>
+        <button
+          type="button"
+          onClick={() => onCopy(trend)}
+          className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/20 px-4 text-[13px] font-bold text-white hover:bg-white/10"
+        >
+          <Copy size={15} />
+          Copy topic
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function TrendRow({ trend, maxVol, onCreate, onCopy }) {
+  const pct = trend.volume && maxVol ? Math.max(4, (trend.volume / maxVol) * 100) : 0;
+  return (
+    <li className="group flex items-center gap-3 px-3 py-3.5 sm:gap-4 sm:px-5">
+      <span className="w-7 shrink-0 text-right text-lg font-black tabular-nums text-[#C5BBD2]">{trend.rank}</span>
+
+      <div className="min-w-0 flex-1">
+        <p className="break-words text-[14.5px] font-bold leading-snug">{trend.title}</p>
+        <Meta trend={trend} className="mt-0.5 truncate text-xs text-[#8F869D]" />
+        {pct > 0 && (
+          <div className="mt-2 h-1 w-full max-w-xs overflow-hidden rounded-full bg-[#F0ECF5]">
+            <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
+          </div>
+        )}
       </div>
 
-      {/* Platform Tabs */}
-  <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
-  {PLATFORMS.map((p) => (
-    <button
-      key={p.id}
-      onClick={() => {
-        setActivePlatform(p.id);
+      <button
+        type="button"
+        aria-label={`Copy ${trend.title}`}
+        onClick={() => onCopy(trend)}
+        className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl text-[#A49BAF] hover:bg-[#F8F5FC] hover:text-violet-700 sm:grid"
+      >
+        <Copy size={16} />
+      </button>
+      <button
+        type="button"
+        onClick={() => onCreate(trend)}
+        aria-label={`Write a post about ${trend.title}`}
+        className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[#E9E1F3] bg-white px-3 text-[13px] font-bold text-[#4A3D5A] hover:border-[var(--accent)] hover:bg-[#FAF8FD] sm:px-4"
+      >
+        <PenLine size={15} />
+        <span className="hidden sm:inline">Create</span>
+      </button>
+    </li>
+  );
+}
 
-        if (!trends[p.id]) {
-          fetchTrends(p.id);
-        }
-      }}
-      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-        activePlatform === p.id
-          ? `bg-gradient-to-r ${p.color} text-white shadow-lg`
-          : 'bg-muted text-muted-foreground hover:text-foreground border border-border'
-      }`}
-    >
-      <div
-        className={`w-2 h-2 rounded-full ${
-          activePlatform === p.id ? 'bg-white' : p.dot
-        }`}
-      />
+function Skeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true" aria-label="Loading trends">
+      <div className="h-[220px] animate-pulse rounded-[28px] bg-[#F3EFF8]" />
+      <div className="divide-y divide-[#F0ECF5] rounded-[22px] border border-[#EEE9F2]">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-4 px-5 py-4">
+            <div className="h-5 w-6 animate-pulse rounded bg-[#F0ECF5]" />
+            <div className="h-4 flex-1 animate-pulse rounded bg-[#F0ECF5]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-      {p.label}
-    </button>
-  ))}
-</div>
+function Notice({ icon: Icon, title, hint, children }) {
+  return (
+    <div className="flex flex-col items-center rounded-[28px] border border-dashed border-[#DCD2EA] px-6 py-16 text-center">
+      <span className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-violet-50 text-violet-600">
+        <Icon size={26} />
+      </span>
+      <p className="text-lg font-extrabold">{title}</p>
+      <p className="mt-1.5 max-w-sm text-sm text-[#8F869D]">{hint}</p>
+      {children}
+    </div>
+  );
+}
 
-<input
-  type="text"
-  value={searchQuery}
-  onChange={(e) => setSearchQuery(e.target.value)}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter') {
-      fetchSearch(searchQuery);
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
+
+export default function TrendsDashboard() {
+  const navigate = useNavigate();
+  const [platformId, setPlatformId] = useState(PLATFORMS[0].id);
+  const [cache, setCache] = useState({});
+  const [loadingId, setLoadingId] = useState(null);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [, tick] = useState(0);
+
+  const platform = PLATFORMS.find((p) => p.id === platformId);
+  const entry = cache[platformId];
+  const loading = loadingId === platformId;
+
+  // keeps "Updated 3m ago" fresh
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    setError("");
+    setQuery("");
+  }, [platformId]);
+
+  const load = useCallback(async () => {
+    const id = platformId;
+    setLoadingId(id);
+    setError("");
+    try {
+      const raw = await fetchTrends(id);
+      const items = (Array.isArray(raw) ? raw : []).slice(0, 10).map(normalize);
+      setCache((c) => ({ ...c, [id]: { items, updatedAt: Date.now() } }));
+    } catch (e) {
+      setError(e?.message || "Couldn't load trends");
+    } finally {
+      setLoadingId((cur) => (cur === id ? null : cur));
     }
-  }}
-  className="
-    w-full
-    mb-6
-    p-3
-    text-foreground
-    bg-background
-    border border-border
-    rounded-xl
-    focus:outline-none
-    focus:ring-2
-    focus:ring-blue-500
-  "
-  placeholder="Search trends..."
-/>
-      {/* Trends Grid */}
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400/20 to-orange-500/20 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-yellow-400" />
-          </div>
-          <p className="font-display font-semibold text-foreground">Scanning {platform.label} trends...</p>
-          <p className="text-sm text-muted-foreground">Fetching real-time data from the web</p>
-        </div>
-      )}
+  }, [platformId]);
 
-      {!isLoading && currentTrends.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400/10 to-orange-500/10 flex items-center justify-center">
-            <Flame className="w-8 h-8 text-orange-400 opacity-50" />
-          </div>
-          <p className="font-display font-semibold text-foreground">No trends loaded yet</p>
-          <p className="text-sm text-muted-foreground">Click "Refresh Trends" to see what's hot on {platform.label} 🔥</p>
-          <Button onClick={() => fetchTrends(activePlatform)} className={`bg-gradient-to-r ${platform.color} text-white`}>
-            Load Trends
-          </Button>
-        </div>
-      )}
+  const items = entry?.items ?? [];
+  const q = query.trim().toLowerCase();
+  const filtered = q ? items.filter((t) => `${t.title} ${t.category}`.toLowerCase().includes(q)) : items;
+  const featured = !q && filtered.length ? filtered[0] : null;
+  const list = featured ? filtered.slice(1) : filtered;
+  const maxVol = Math.max(0, ...items.map((t) => t.volume || 0));
 
-      {!isLoading && currentTrends.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {currentTrends.map((trend, i) => (
-            <div key={i} className={`bg-card border border-border rounded-xl p-5 hover:border-primary/30 transition-all duration-200 group`}>
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
-                  {i + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-display font-semibold text-foreground text-sm leading-tight">{trend.title}</p>
-                    {trend.engagement?.toLowerCase().includes('viral') && (
-                      <Flame className="w-4 h-4 text-red-400 shrink-0" />
-                    )}
-                  </div>
-                  {trend.hashtag && (
-                    <span className="text-xs text-primary font-medium">{trend.hashtag.startsWith('#') ? trend.hashtag : `#${trend.hashtag}`}</span>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{trend.description}</p>
-                  <div className="flex items-center justify-between mt-3">
-                    <Badge className={`text-xs ${engagementColor(trend.engagement)} bg-transparent border-0 px-0 font-medium`}>
-                      ↑ {trend.engagement || 'trending'}
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => saveContent.mutate({ title: `Trend: ${trend.title}`, content: `${trend.description}\n\nHashtag: ${trend.hashtag || ''}`, content_type: 'idea', platform: activePlatform })}
-                      className="  text-xs
-  text-muted-foreground
-  hover:text-primary
-  gap-1
-  opacity-100 sm:opacity-0
-  sm:group-hover:opacity-100
-  transition-opacity"
-                    >
-                      <Sparkles className="w-3 h-3" /> Save idea
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => { window.open(`https://www.google.com/search?q=${encodeURIComponent(trend.title)}`, '_blank'); }}
-                      className="text-xs text-muted-foreground hover:text-foreground gap-1"
-                    >
-                      <ArrowUpRight className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+  function createFrom(trend) {
+    try {
+      sessionStorage.setItem(
+        "illia_home_prompt",
+        `Write a ${platform.label} post about the trending topic "${trend.title}".`
+      );
+    } catch {
+      /* storage blocked */
+    }
+    navigate("/studio/create");
+  }
+
+  function copyTopic(trend) {
+    navigator.clipboard.writeText(trend.title).then(() => toast.success("Topic copied"));
+  }
+
+  return (
+    // pt-16 on phones leaves room for the sidebar's fixed menu button
+    <div
+      className="min-h-screen w-full bg-white px-3 pb-10 pt-16 text-[#292035] sm:px-6 lg:px-10 lg:pt-8"
+      style={{ "--accent": platform.color }}
+    >
+      <div className="mx-auto w-full max-w-[1000px]">
+        {/* Header */}
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="flex items-center gap-3 text-[28px] font-black tracking-[-0.8px] sm:text-[34px]">
+              <TrendingUp className="text-violet-600" size={30} />
+              Trends
+            </h1>
+            <p className="mt-1.5 text-sm text-[#8F869D]">
+              The top 10 topics on each platform right now. Pick one and turn it into a post.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {entry && <span className="text-xs text-[#A49BAF]">Updated {timeAgo(entry.updatedAt)}</span>}
+            <button
+              type="button"
+              onClick={load}
+              disabled={loading}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#2A1733] px-4 text-[13px] font-extrabold text-white hover:bg-[#3A2447] disabled:opacity-60"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              {loading ? "Loading" : entry ? "Refresh" : "Load trends"}
+            </button>
+          </div>
+        </header>
+
+        {/* Platforms */}
+        <div className="-mx-3 mb-4 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none]" role="tablist">
+          <div className="flex w-max gap-2">
+            {PLATFORMS.map((p) => {
+              const active = p.id === platformId;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setPlatformId(p.id)}
+                  style={{ "--c": p.color }}
+                  className={`inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-[13.5px] font-bold transition ${
+                    active
+                      ? "border-[var(--c)] bg-[color-mix(in_srgb,var(--c)_16%,white)] text-[#292035]"
+                      : "border-[#EEE9F2] bg-white text-[#6E647C] hover:border-[#D9CFE6] hover:text-[#292035]"
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-[var(--c)]" />
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      )}
+
+        {/* Search */}
+        <label className="relative mb-6 block">
+          <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A69DB3]" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${platform.label} trends`}
+            aria-label="Search trends"
+            className="h-12 w-full rounded-2xl border border-[#EEE9F2] bg-white pl-11 pr-4 text-base text-[#292035] outline-none placeholder:text-[#A69DB3] focus:border-[var(--accent)] focus:ring-4 focus:ring-violet-50 sm:text-[14.5px]"
+          />
+        </label>
+
+        {USE_SAMPLE_DATA && (
+          <p className="mb-4 rounded-xl bg-[#F8F5FC] px-3.5 py-2.5 text-xs text-[#8E829F]">
+            Showing sample trends. Connect fetchTrends to your trends service for live data.
+          </p>
+        )}
+
+        {error && entry && (
+          <p className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-[13px] text-rose-700">
+            <AlertCircle size={16} className="shrink-0" />
+            Couldn't refresh, showing the last results. {error}
+          </p>
+        )}
+
+        {/* Content */}
+        {loading && !entry ? (
+          <Skeleton />
+        ) : error && !entry ? (
+          <Notice icon={AlertCircle} title="Couldn't load trends" hint={error}>
+            <button
+              type="button"
+              onClick={load}
+              className="mt-5 h-11 rounded-xl bg-[#2A1733] px-5 text-[13px] font-extrabold text-white hover:bg-[#3A2447]"
+            >
+              Try again
+            </button>
+          </Notice>
+        ) : !entry ? (
+          <Notice
+            icon={TrendingUp}
+            title={`See what's trending on ${platform.label}`}
+            hint="Load the top 10 topics, then turn any of them into a post."
+          >
+            <button
+              type="button"
+              onClick={load}
+              className="mt-5 h-11 rounded-xl bg-[#2A1733] px-5 text-[13px] font-extrabold text-white hover:bg-[#3A2447]"
+            >
+              Load trends
+            </button>
+          </Notice>
+        ) : filtered.length === 0 ? (
+          <Notice icon={Search} title="No trends match your search" hint={`Nothing on ${platform.label} matches “${query}”. Try a shorter word.`} />
+        ) : (
+          <div className="space-y-4">
+            {featured && <FeaturedTrend trend={featured} platform={platform} onCreate={createFrom} onCopy={copyTopic} />}
+            {list.length > 0 && (
+              <ul className="divide-y divide-[#F0ECF5] overflow-hidden rounded-[22px] border border-[#EEE9F2] bg-white">
+                {list.map((t) => (
+                  <TrendRow key={t.id} trend={t} maxVol={maxVol} onCreate={createFrom} onCopy={copyTopic} />
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
