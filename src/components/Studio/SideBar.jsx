@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Activity,
@@ -67,13 +66,15 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar: no padding or overflow on the aside itself.
+          The logo row is pinned, and only the section below it scrolls. */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[258px] flex-col border-r border-[#EEE9F2] bg-white px-5 py-6 transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[258px] flex-col border-r border-[#EEE9F2] bg-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="mb-9 flex items-center justify-between px-1">
+        {/* Pinned logo row */}
+        <div className="flex shrink-0 items-center justify-between border-b border-[#F3EEF7] px-6 pb-5 pt-6">
           <Brand />
 
           <button
@@ -86,106 +87,111 @@ export default function Sidebar() {
           </button>
         </div>
 
-        <div className="space-y-8">
-          {navigation.map((group) => (
-            <div key={group.title}>
-              <p className="mb-3 px-3 text-[10px] font-extrabold tracking-[1.8px] text-[#ABA2B7]">
-                {group.title}
-              </p>
+        {/* Scrollable area */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-6 pt-7 [scrollbar-color:#E4DDEE_transparent] [scrollbar-width:thin]">
+          <div className="shrink-0 space-y-8">
+            {navigation.map((group) => (
+              <div key={group.title}>
+                <p className="mb-3 px-3 text-[10px] font-extrabold tracking-[1.8px] text-[#ABA2B7]">
+                  {group.title}
+                </p>
 
-              <nav className="space-y-1">
-                {group.items.map(
-                  ({ label, href, icon: Icon, badge, end }) => (
-                    <NavLink
-                      key={label}
-                      to={href}
-                      end={end}
-                      onClick={() => setOpen(false)}
-                      className={({ isActive }) =>
-                        `group flex min-h-[43px] items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition ${
-                          isActive
-                            ? "bg-violet-50 text-violet-700"
-                            : "text-[#777083] hover:bg-[#F8F6FB] hover:text-[#352541]"
-                        }`
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <Icon
-                            size={18}
-                            strokeWidth={isActive ? 2.4 : 1.9}
-                          />
-
-                          <span>{label}</span>
-
-                          {badge && (
-                            <span className="ml-auto rounded-md bg-violet-100 px-1.5 py-0.5 text-[9px] font-black text-violet-700">
-                              {badge}
-                            </span>
-                          )}
-
-                          {isActive && (
-                            <ChevronRight
-                              size={15}
-                              className="ml-auto opacity-60"
+                <nav className="space-y-1">
+                  {group.items.map(
+                    ({ label, href, icon: Icon, badge, end }) => (
+                      <NavLink
+                        key={label}
+                        to={href}
+                        end={end}
+                        onClick={() => setOpen(false)}
+                        className={({ isActive }) =>
+                          `group flex min-h-[43px] items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition ${
+                            isActive
+                              ? "bg-violet-50 text-violet-700"
+                              : "text-[#777083] hover:bg-[#F8F6FB] hover:text-[#352541]"
+                          }`
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <Icon
+                              size={18}
+                              strokeWidth={isActive ? 2.4 : 1.9}
                             />
-                          )}
-                        </>
-                      )}
-                    </NavLink>
-                  )
-                )}
-              </nav>
-            </div>
-          ))}
-        </div>
 
-        <div className="mt-auto pt-8">
-          <div className="relative mb-5 overflow-hidden rounded-[20px] bg-[#251932] p-4 text-white">
-            <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-fuchsia-500/20 blur-2xl" />
+                            <span>{label}</span>
 
-            <div className="relative">
-              <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-fuchsia-200">
-                <Zap size={18} fill="currentColor" />
-              </span>
+                            {badge && (
+                              <span className="ml-auto rounded-md bg-violet-100 px-1.5 py-0.5 text-[9px] font-black text-violet-700">
+                                {badge}
+                              </span>
+                            )}
 
-              <p className="text-[13px] font-extrabold">
-                Your next big idea starts here.
-              </p>
-
-              <p className="mt-2 text-[11px] leading-5 text-white/60">
-                Make something your audience will remember.
-              </p>
-
-              <NavLink
-                to="/studio/create"
-                onClick={() => setOpen(false)}
-                className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold text-fuchsia-200 hover:text-white"
-              >
-                Open creator studio <ArrowRight size={14} />
-              </NavLink>
-            </div>
+                            {isActive && (
+                              <ChevronRight
+                                size={15}
+                                className="ml-auto opacity-60"
+                              />
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    )
+                  )}
+                </nav>
+              </div>
+            ))}
           </div>
 
-          <NavLink
-            to="/studio/settings"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3 rounded-xl px-3 py-3 text-[12px] font-semibold text-[#777083] hover:bg-[#F8F6FB]"
-          >
-            <Settings size={18} />
-            Settings
-          </NavLink>
+          {/* mt-auto keeps this at the bottom when there is room,
+              and it scrolls with the rest when there isn't */}
+          <div className="mt-auto shrink-0 pt-8">
+            <div className="relative mb-5 overflow-hidden rounded-[20px] bg-[#251932] p-4 text-white">
+              <div className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-fuchsia-500/20 blur-2xl" />
 
-          <button
-            type="button"
-            onClick={() =>
-              window.alert("Connect your help and support page here.")
-            }
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[12px] font-semibold text-[#777083] hover:bg-[#F8F6FB]"
-          >
-            <CircleHelp size={18} />
-            Help &amp; support
-          </button>
+              <div className="relative">
+                <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-fuchsia-200">
+                  <Zap size={18} fill="currentColor" />
+                </span>
+
+                <p className="text-[13px] font-extrabold">
+                  Your next big idea starts here.
+                </p>
+
+                <p className="mt-2 text-[11px] leading-5 text-white/60">
+                  Make something your audience will remember.
+                </p>
+
+                <NavLink
+                  to="/studio/create"
+                  onClick={() => setOpen(false)}
+                  className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold text-fuchsia-200 hover:text-white"
+                >
+                  Open creator studio <ArrowRight size={14} />
+                </NavLink>
+              </div>
+            </div>
+
+            <NavLink
+              to="/studio/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3 py-3 text-[12px] font-semibold text-[#777083] hover:bg-[#F8F6FB]"
+            >
+              <Settings size={18} />
+              Settings
+            </NavLink>
+
+            <button
+              type="button"
+              onClick={() =>
+                window.alert("Connect your help and support page here.")
+              }
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[12px] font-semibold text-[#777083] hover:bg-[#F8F6FB]"
+            >
+              <CircleHelp size={18} />
+              Help &amp; support
+            </button>
+          </div>
         </div>
       </aside>
     </>

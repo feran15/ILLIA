@@ -271,8 +271,8 @@ function Message({ msg, onEdit, onTick }) {
 
   return (
     <div
-      className={`flex gap-3 ${
-        isUser ? "max-w-[88%] flex-row-reverse self-end sm:max-w-[78%]" : "max-w-[92%] sm:max-w-[82%]"
+      className={`flex gap-2.5 sm:gap-3 ${
+        isUser ? "max-w-[92%] flex-row-reverse self-end sm:max-w-[78%]" : "max-w-[96%] sm:max-w-[82%]"
       }`}
     >
       <span
@@ -285,7 +285,7 @@ function Message({ msg, onEdit, onTick }) {
 
       <div className="min-w-0">
         <div
-          className={`px-4 py-3 text-[14.5px] leading-relaxed ${
+          className={`break-words px-3.5 py-3 text-[14.5px] leading-relaxed sm:px-4 ${
             isUser
               ? "grad rounded-2xl rounded-br text-white"
               : "rounded-2xl rounded-bl border border-line bg-alt text-ink"
@@ -333,7 +333,7 @@ function ThreadRow({ thread, active, projectName, onOpen, onDelete }) {
   return (
     <div
       onClick={() => onOpen(thread)}
-      className={`flex cursor-pointer items-center gap-3.5 rounded-[14px] border px-4 py-3.5 transition hover:-translate-y-px ${
+      className={`flex cursor-pointer items-center gap-3 rounded-[14px] border px-3.5 py-3.5 transition hover:-translate-y-px sm:gap-3.5 sm:px-4 ${
         active ? "soft border-vio" : "border-line bg-surf hover:border-vio/30"
       }`}
     >
@@ -342,7 +342,7 @@ function ThreadRow({ thread, active, projectName, onOpen, onDelete }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13.5px] font-bold">{thread.title}</div>
-        <div className="mt-0.5 text-[11.5px] text-black">
+        <div className="mt-0.5 truncate text-[11.5px] text-black">
           {relativeTime(thread.updatedAt)}
           {projectName ? ` · ${projectName}` : ""}
         </div>
@@ -354,7 +354,7 @@ function ThreadRow({ thread, active, projectName, onOpen, onDelete }) {
           e.stopPropagation();
           onDelete(thread);
         }}
-        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-alt text-faint hover:text-rose-500"
+        className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[9px] bg-alt text-faint hover:text-rose-500 sm:h-[30px] sm:w-[30px]"
       >
         <Icon d={I.trash} className="h-3.5 w-3.5" />
       </button>
@@ -364,7 +364,7 @@ function ThreadRow({ thread, active, projectName, onOpen, onDelete }) {
 
 function EmptyState({ icon, title, hint }) {
   return (
-    <div className="col-span-full px-5 py-12 text-center text-faint">
+    <div className="col-span-full rounded-[20px] border border-line bg-surf px-5 py-12 text-center text-faint">
       <Icon d={icon} className="mx-auto mb-3.5 h-[34px] w-[34px] opacity-50" />
       <p className="mb-1 text-[15px] font-bold text-mute">{title}</p>
       <p className="text-[13.5px]">{hint}</p>
@@ -376,10 +376,12 @@ function Modal({ open, onClose, children }) {
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/60 p-5 backdrop-blur-md"
+      className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-[400px] rounded-3xl bg-surf p-7 shadow-2xl">{children}</div>
+      <div className="max-h-[90dvh] w-full max-w-[400px] overflow-y-auto rounded-3xl bg-surf p-5 shadow-2xl sm:p-7">
+        {children}
+      </div>
     </div>
   );
 }
@@ -390,8 +392,11 @@ const btnPrimary = `${btnBase} grad text-white shadow-lg shadow-violet-500/30 ho
 const btnSecondary = `${btnBase} border-[1.5px] border-line bg-surf text-ink hover:border-vio hover:bg-alt`;
 const btnDanger = `${btnBase} bg-rose-500 text-white hover:-translate-y-px`;
 const btnSm = "!px-4 !py-2.5 !text-[13px]";
+// text-base on phones stops iOS Safari from zooming into the field
 const fieldCls =
-  "w-full rounded-xl border-[1.5px] border-line bg-alt px-3.5 py-3 text-[14.5px] text-ink outline-none focus:border-vio focus:bg-surf";
+  "w-full rounded-xl border-[1.5px] border-line bg-alt px-3.5 py-3 text-base text-ink outline-none focus:border-vio focus:bg-surf sm:text-[14.5px]";
+const cardHeader =
+  "mb-[18px] flex flex-wrap items-center justify-between gap-3.5 rounded-[20px] border border-line bg-surf p-4 sm:p-6";
 
 /* ------------------------------------------------------------------ */
 /* Main page                                                           */
@@ -607,7 +612,7 @@ export default function Create() {
   }
   sendRef.current = send;
 
-  // Lets the Home composer hand a prompt to this page.
+  // Lets the Home composer hand a prompt to this page (event based).
   useEffect(() => {
     const handler = (e) => {
       const prompt = e.detail?.prompt;
@@ -615,6 +620,27 @@ export default function Create() {
     };
     window.addEventListener("illia:composer-submit", handler);
     return () => window.removeEventListener("illia:composer-submit", handler);
+  }, []);
+
+  // Picks up the prompt Home saves in sessionStorage before navigating here.
+  useEffect(() => {
+    let saved = null;
+    try {
+      saved = sessionStorage.getItem("illia_home_prompt");
+      if (saved) sessionStorage.removeItem("illia_home_prompt");
+    } catch {
+      /* storage blocked */
+    }
+    if (saved) {
+      setInput(saved);
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.focus();
+        el.style.height = "auto";
+        el.style.height = `${Math.min(120, el.scrollHeight)}px`;
+      });
+    }
   }, []);
 
   function editMessage(text) {
@@ -757,16 +783,17 @@ export default function Create() {
   const lastStep = onboardIndex === ONBOARDING.length - 1;
 
   return (
-    <div className="illia-create-theme min-h-screen w-full px-4 py-6">
+    // pt-16 on phones leaves room for the sidebar's fixed menu button
+    <div className="illia-create-theme min-h-screen w-full px-3 pb-6 pt-16 sm:px-4 lg:py-6">
       <style>{`
         .illia-create-theme {
-          background: #241528;
+          background: white;
           color: #FFFFFF;
           color-scheme: dark;
         }
 
         .illia-create-theme .bg-surf {
-          background-color: #33213C !important;
+          background-color: #351D4C !important;
         }
 
         .illia-create-theme .bg-alt {
@@ -821,409 +848,414 @@ export default function Create() {
           color: #FFFFFF !important;
         }
       `}</style>
+
       <div className="mx-auto w-full max-w-[980px]">
-      {/* Tabs + help */}
-      <div className="mb-[22px] flex items-center justify-between gap-3">
-        <div className="inline-flex gap-1 rounded-full border border-line bg-alt p-1" role="tablist">
-          {TABS.map(([id, label, icon]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={tab === id}
-              onClick={() => {
-                setTab(id);
-                if (id === "history") refreshThreads();
-                if (id === "projects") {
-                  refreshProjects();
-                  refreshThreads();
-                }
-              }}
-              className={`flex items-center gap-[7px] rounded-full px-3.5 py-2.5 text-sm font-bold transition sm:px-[18px] ${
-                tab === id ? "grad text-black shadow-lg shadow-violet-500/30" : "text-mute hover:text-ink"
-              }`}
-            >
-              <Icon d={icon} className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          aria-label="Show feature guide"
-          onClick={() => {
-            setOnboardIndex(0);
-            setOnboardOpen(true);
-          }}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-[1.5px] border-line bg-surf text-ink hover:border-vio"
-        >
-          <Icon d={I.help} className="h-[18px] w-[18px]" />
-        </button>
-      </div>
-
-      {/* ---------------- Ask AI ---------------- */}
-      {tab === "ask" && (
-        <section className="flex h-[calc(100vh-300px)] min-h-[420px] flex-col rounded-[20px] border border-line bg-surf lg:h-[calc(100vh-270px)]">
-          <div className="flex shrink-0 items-center justify-between gap-2.5 border-b border-line px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
-              <span className="truncate text-[13px] font-bold text-mute">{threadTitle}</span>
-              {projectName(currentChatProjectId) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTab("projects");
-                    setActiveProjectId(currentChatProjectId);
-                  }}
-                  className="soft inline-flex max-w-[180px] shrink-0 items-center gap-1.5 rounded-full border border-vio/20 py-[5px] pl-2 pr-2.5 text-[11.5px] font-bold text-violet-700 hover:border-vio dark:text-violet-200"
-                >
-                  <Icon d={I.folder} className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{projectName(currentChatProjectId)}</span>
-                </button>
-              )}
-            </div>
-            <button type="button" onClick={() => startNewChat(null)} className={`${btnSecondary} ${btnSm}`}>
-              <Icon d={I.plus} className="h-4 w-4" />
-              New Chat
-            </button>
-          </div>
-
-          {banner && (
-            <div className="mx-4 mt-3 rounded-[10px] border border-rose-500/40 bg-rose-500/10 px-3.5 py-2.5 text-[13px] leading-normal text-rose-600 dark:text-rose-300">
-              {banner}
-            </div>
-          )}
-
-          <div ref={scrollRef} className="flex flex-1 flex-col gap-[18px] overflow-y-auto p-4 sm:p-6">
-            {messages.map((m) => (
-              <Message key={m.id} msg={m} onEdit={editMessage} onTick={scrollBottom} />
-            ))}
-            {sending && <TypingIndicator />}
-          </div>
-
-          <div className="border-t border-line px-4 py-3.5">
-            {attachment && (
-              <div className="mb-2.5 flex items-center gap-2.5 rounded-xl border border-line bg-alt px-3 py-2 text-[13px] font-semibold">
-                <span className="grid h-[30px] w-[30px] shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-surf">
-                  {attachment.type?.includes("image") ? (
-                    <img src={attachment.previewUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <video src={attachment.previewUrl} muted className="h-full w-full object-cover" />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{attachment.name}</span>
-                <button type="button" aria-label="Remove attachment" onClick={removeAttachment} className="text-faint hover:text-ink">
-                  <Icon d={I.x} className="h-[15px] w-[15px]" />
-                </button>
-              </div>
-            )}
-
-            <div className="flex items-end gap-2">
+        {/* Tabs + help */}
+        <div className="mb-4 flex items-center justify-between gap-2 sm:mb-[22px] sm:gap-3">
+          <div
+            className="flex min-w-0 flex-1 gap-1 rounded-full border border-line bg-alt p-1 sm:inline-flex sm:flex-none"
+            role="tablist"
+          >
+            {TABS.map(([id, label, icon]) => (
               <button
+                key={id}
                 type="button"
-                aria-label="Attach image or video"
-                onClick={() => fileRef.current?.click()}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-[1.5px] border-line bg-alt text-mute hover:border-vio hover:text-vio"
-              >
-                <Icon d={I.clip} className="h-[18px] w-[18px]" />
-              </button>
-              <button
-                type="button"
-                aria-label="Record voice message"
-                onClick={toggleMic}
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border-[1.5px] ${
-                  recording
-                    ? "animate-pulse border-rose-500 bg-rose-500/10 text-rose-500"
-                    : "border-line bg-alt text-mute hover:border-vio hover:text-vio"
-                }`}
-              >
-                <Icon d={I.mic} className="h-[18px] w-[18px]" />
-              </button>
-
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                value={input}
-                placeholder="Ask anything, or attach an image for context"
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  e.target.style.height = "auto";
-                  e.target.style.height = `${Math.min(120, e.target.scrollHeight)}px`;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
+                role="tab"
+                aria-selected={tab === id}
+                onClick={() => {
+                  setTab(id);
+                  if (id === "history") refreshThreads();
+                  if (id === "projects") {
+                    refreshProjects();
+                    refreshThreads();
                   }
                 }}
-                className="max-h-[120px] min-h-[40px] flex-1 resize-none rounded-[14px] border-[1.5px] border-line bg-alt px-3.5 py-2.5 text-[14.5px] leading-normal text-ink outline-none placeholder:text-faint focus:border-vio focus:bg-surf"
-              />
-
-              <button
-                type="button"
-                aria-label="Send message"
-                onClick={() => send()}
-                disabled={sending || (!input.trim() && !attachment)}
-                className="grad grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white disabled:opacity-50"
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-2.5 text-[13px] font-bold transition sm:flex-none sm:gap-[7px] sm:px-[18px] sm:text-sm ${
+                  tab === id ? "grad text-black shadow-lg shadow-violet-500/30" : "text-mute hover:text-ink"
+                }`}
               >
-                <Icon d={I.send} className="h-[17px] w-[17px]" />
+                <Icon d={icon} className="hidden h-4 w-4 sm:block" />
+                {label}
               </button>
-            </div>
+            ))}
           </div>
 
-          <input ref={fileRef} type="file" accept="image/*,video/*" className="sr-only" onChange={handleFile} />
-        </section>
-      )}
-
-      {/* ---------------- Projects ---------------- */}
-      {tab === "projects" && !activeProject && (
-        <section>
-          <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3.5 rounded-[20px] border border-line bg-surf p-6">
-            <div>
-              <div className="text-[15px] font-extrabold">Projects</div>
-              <div className="mt-0.5 text-[13px] text-mute">Group related chats together, each one keeps its own context</div>
-            </div>
-            <button type="button" onClick={() => setNewProjectOpen(true)} className={`${btnPrimary} ${btnSm}`}>
-              <Icon d={I.plus} className="h-4 w-4" />
-              New Project
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.length === 0 ? (
-              <EmptyState icon={I.folder} title="No projects yet" hint="Create one to keep related chats and context together" />
-            ) : (
-              projects.map((p) => {
-                const count = threads.filter((t) => t.projectId === p.id).length;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setActiveProjectId(p.id)}
-                    className="flex min-h-[128px] flex-col gap-2.5 rounded-2xl border border-line bg-surf p-[18px] text-left transition hover:-translate-y-0.5 hover:border-vio/30 hover:shadow-lg"
-                  >
-                    <span className="soft grid h-[38px] w-[38px] place-items-center rounded-[11px] text-violet-700 dark:text-violet-200">
-                      <Icon d={I.folder} className="h-[18px] w-[18px]" />
-                    </span>
-                    <span className="truncate text-[14.5px] font-extrabold">{p.name}</span>
-                    <span className="line-clamp-2 flex-1 text-[12.5px] leading-normal text-mute">{p.description}</span>
-                    <span className="border-t border-line pt-2.5 text-[11.5px] font-bold text-faint">
-                      {count} {count === 1 ? "chat" : "chats"}
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </section>
-      )}
-
-      {tab === "projects" && activeProject && (
-        <section>
           <button
             type="button"
-            onClick={() => setActiveProjectId(null)}
-            className="mb-3.5 inline-flex items-center gap-1.5 py-1.5 text-[13.5px] font-bold text-mute hover:text-vio"
+            aria-label="Show feature guide"
+            onClick={() => {
+              setOnboardIndex(0);
+              setOnboardOpen(true);
+            }}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-[1.5px] border-line bg-surf text-ink hover:border-vio"
           >
-            <Icon d={I.back} className="h-4 w-4" />
-            Projects
+            <Icon d={I.help} className="h-[18px] w-[18px]" />
           </button>
+        </div>
 
-          <div className="mb-[18px] flex flex-wrap items-start justify-between gap-3.5 rounded-[20px] border border-line bg-surf p-6">
-            <div className="min-w-0">
-              <div className="text-[17px] font-extrabold">{activeProject.name}</div>
-              <div className="mt-1 text-[13px] text-mute">{activeProject.description || "No description added"}</div>
-            </div>
-            <div className="flex shrink-0 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  startNewChat(activeProject.id);
-                  setTab("ask");
-                }}
-                className={`${btnSecondary} ${btnSm}`}
-              >
+        {/* ---------------- Ask AI ---------------- */}
+        {tab === "ask" && (
+          <section className="flex h-[calc(100dvh-160px)] min-h-[420px] flex-col rounded-[20px] border border-line bg-surf lg:h-[calc(100dvh-130px)]">
+            <div className="flex shrink-0 items-center justify-between gap-2.5 border-b border-line px-3 py-3 sm:px-4">
+              <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
+                <span className="truncate text-[13px] font-bold text-mute">{threadTitle}</span>
+                {projectName(currentChatProjectId) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab("projects");
+                      setActiveProjectId(currentChatProjectId);
+                    }}
+                    className="soft inline-flex max-w-[110px] shrink-0 items-center gap-1.5 rounded-full border border-vio/20 py-[5px] pl-2 pr-2.5 text-[11.5px] font-bold text-violet-700 hover:border-vio sm:max-w-[180px] dark:text-violet-200"
+                  >
+                    <Icon d={I.folder} className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{projectName(currentChatProjectId)}</span>
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={() => startNewChat(null)} className={`${btnSecondary} ${btnSm} shrink-0`}>
                 <Icon d={I.plus} className="h-4 w-4" />
                 New Chat
               </button>
+            </div>
+
+            {banner && (
+              <div className="mx-3 mt-3 break-words rounded-[10px] border border-rose-500/40 bg-rose-500/10 px-3.5 py-2.5 text-[13px] leading-normal text-rose-600 sm:mx-4 dark:text-rose-300">
+                {banner}
+              </div>
+            )}
+
+            <div ref={scrollRef} className="flex flex-1 flex-col gap-[18px] overflow-y-auto p-3 sm:p-6">
+              {messages.map((m) => (
+                <Message key={m.id} msg={m} onEdit={editMessage} onTick={scrollBottom} />
+              ))}
+              {sending && <TypingIndicator />}
+            </div>
+
+            <div className="border-t border-line px-3 py-3.5 sm:px-4">
+              {attachment && (
+                <div className="mb-2.5 flex items-center gap-2.5 rounded-xl border border-line bg-alt px-3 py-2 text-[13px] font-semibold">
+                  <span className="grid h-[30px] w-[30px] shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-surf">
+                    {attachment.type?.includes("image") ? (
+                      <img src={attachment.previewUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <video src={attachment.previewUrl} muted className="h-full w-full object-cover" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{attachment.name}</span>
+                  <button type="button" aria-label="Remove attachment" onClick={removeAttachment} className="text-faint hover:text-ink">
+                    <Icon d={I.x} className="h-[15px] w-[15px]" />
+                  </button>
+                </div>
+              )}
+
+              {/* On phones the textarea takes the full row and the buttons sit under it */}
+              <div className="flex flex-wrap items-end gap-2 sm:flex-nowrap">
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  value={input}
+                  placeholder="Ask anything, or attach an image for context"
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = `${Math.min(120, e.target.scrollHeight)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  className="order-first max-h-[120px] min-h-[40px] w-full resize-none rounded-[14px] border-[1.5px] border-line bg-alt px-3.5 py-2.5 text-base leading-normal text-ink outline-none placeholder:text-faint focus:border-vio focus:bg-surf sm:order-none sm:w-auto sm:flex-1 sm:text-[14.5px]"
+                />
+
+                <button
+                  type="button"
+                  aria-label="Attach image or video"
+                  onClick={() => fileRef.current?.click()}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-[1.5px] border-line bg-alt text-mute hover:border-vio hover:text-vio sm:order-first"
+                >
+                  <Icon d={I.clip} className="h-[18px] w-[18px]" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Record voice message"
+                  onClick={toggleMic}
+                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border-[1.5px] sm:order-first ${
+                    recording
+                      ? "animate-pulse border-rose-500 bg-rose-500/10 text-rose-500"
+                      : "border-line bg-alt text-mute hover:border-vio hover:text-vio"
+                  }`}
+                >
+                  <Icon d={I.mic} className="h-[18px] w-[18px]" />
+                </button>
+
+                <button
+                  type="button"
+                  aria-label="Send message"
+                  onClick={() => send()}
+                  disabled={sending || (!input.trim() && !attachment)}
+                  className="grad ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white disabled:opacity-50 sm:ml-0"
+                >
+                  <Icon d={I.send} className="h-[17px] w-[17px]" />
+                </button>
+              </div>
+            </div>
+
+            <input ref={fileRef} type="file" accept="image/*,video/*" className="sr-only" onChange={handleFile} />
+          </section>
+        )}
+
+        {/* ---------------- Projects ---------------- */}
+        {tab === "projects" && !activeProject && (
+          <section>
+            <div className={cardHeader}>
+              <div className="min-w-0">
+                <div className="text-[15px] font-extrabold">Projects</div>
+                <div className="mt-0.5 text-[13px] text-mute">Group related chats together, each one keeps its own context</div>
+              </div>
+              <button type="button" onClick={() => setNewProjectOpen(true)} className={`${btnPrimary} ${btnSm}`}>
+                <Icon d={I.plus} className="h-4 w-4" />
+                New Project
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.length === 0 ? (
+                <EmptyState icon={I.folder} title="No projects yet" hint="Create one to keep related chats and context together" />
+              ) : (
+                projects.map((p) => {
+                  const count = threads.filter((t) => t.projectId === p.id).length;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setActiveProjectId(p.id)}
+                      className="flex min-h-[128px] flex-col gap-2.5 rounded-2xl border border-line bg-surf p-[18px] text-left transition hover:-translate-y-0.5 hover:border-vio/30 hover:shadow-lg"
+                    >
+                      <span className="soft grid h-[38px] w-[38px] place-items-center rounded-[11px] text-violet-700 dark:text-violet-200">
+                        <Icon d={I.folder} className="h-[18px] w-[18px]" />
+                      </span>
+                      <span className="w-full truncate text-[14.5px] font-extrabold">{p.name}</span>
+                      <span className="line-clamp-2 flex-1 text-[12.5px] leading-normal text-mute">{p.description}</span>
+                      <span className="w-full border-t border-line pt-2.5 text-[11.5px] font-bold text-faint">
+                        {count} {count === 1 ? "chat" : "chats"}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </section>
+        )}
+
+        {tab === "projects" && activeProject && (
+          <section>
+            <button
+              type="button"
+              onClick={() => setActiveProjectId(null)}
+              className="mb-3.5 inline-flex items-center gap-1.5 rounded-full border border-line bg-surf px-3.5 py-2 text-[13.5px] font-bold text-mute hover:text-vio"
+            >
+              <Icon d={I.back} className="h-4 w-4" />
+              Projects
+            </button>
+
+            <div className={`${cardHeader} !items-start`}>
+              <div className="min-w-0 break-words">
+                <div className="text-[17px] font-extrabold">{activeProject.name}</div>
+                <div className="mt-1 text-[13px] text-mute">{activeProject.description || "No description added"}</div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    startNewChat(activeProject.id);
+                    setTab("ask");
+                  }}
+                  className={`${btnSecondary} ${btnSm}`}
+                >
+                  <Icon d={I.plus} className="h-4 w-4" />
+                  New Chat
+                </button>
+                <button
+                  type="button"
+                  aria-label="Delete project"
+                  onClick={() => setDeleteProjectOpen(true)}
+                  className="grid h-10 w-10 place-items-center rounded-full border-[1.5px] border-line bg-surf hover:border-rose-500 hover:text-rose-500"
+                >
+                  <Icon d={I.trash} className="h-[18px] w-[18px]" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              {projectThreads.length === 0 ? (
+                <EmptyState icon={I.clock} title="No chats in this project yet" hint="Start a new chat above to begin" />
+              ) : (
+                projectThreads.map((t) => (
+                  <ThreadRow
+                    key={t.id}
+                    thread={t}
+                    active={t.id === activeThreadId}
+                    onOpen={openThread}
+                    onDelete={deleteThread}
+                  />
+                ))
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ---------------- History ---------------- */}
+        {tab === "history" && (
+          <section>
+            <div className={cardHeader}>
+              <div className="min-w-0">
+                <div className="text-[15px] font-extrabold">Conversation History</div>
+                <div className="mt-0.5 text-[13px] text-mute">
+                  Every chat you've had with ILLIA, pick one up where you left off
+                </div>
+              </div>
               <button
                 type="button"
-                aria-label="Delete project"
-                onClick={() => setDeleteProjectOpen(true)}
-                className="grid h-10 w-10 place-items-center rounded-full border-[1.5px] border-line bg-surf hover:border-rose-500 hover:text-rose-500"
+                onClick={clearHistory}
+                disabled={clearing || threads.length === 0}
+                className={`${btnSecondary} ${btnSm}`}
               >
-                <Icon d={I.trash} className="h-[18px] w-[18px]" />
+                {clearing ? "Clearing..." : "Clear All"}
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              {threads.length === 0 ? (
+                <EmptyState icon={I.clock} title="No conversations yet" hint="Start a chat in Ask AI and it will show up here" />
+              ) : (
+                threads.map((t) => (
+                  <ThreadRow
+                    key={t.id}
+                    thread={t}
+                    active={t.id === activeThreadId}
+                    projectName={projectName(t.projectId)}
+                    onOpen={openThread}
+                    onDelete={deleteThread}
+                  />
+                ))
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ---------------- Modals ---------------- */}
+        <Modal open={newProjectOpen} onClose={() => setNewProjectOpen(false)}>
+          <span className="soft mb-4 grid h-14 w-14 place-items-center rounded-2xl text-violet-700 dark:text-violet-200">
+            <Icon d={I.folder} className="h-6 w-6" />
+          </span>
+          <h4 className="mb-1.5 text-lg font-extrabold">New project</h4>
+          <p className="mb-[18px] text-sm leading-normal text-mute">
+            Group chats about the same topic together, ILLIA keeps this context in mind across every chat inside it.
+          </p>
+
+          <label htmlFor="np-name" className="mb-2 block text-xs font-extrabold text-faint">
+            Name
+          </label>
+          <input
+            id="np-name"
+            autoFocus
+            maxLength={60}
+            value={newProjectName}
+            onChange={(e) => setNewProjectName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && createProject()}
+            placeholder="e.g. Ramadan Campaign"
+            className={`${fieldCls} mb-4`}
+          />
+
+          <label htmlFor="np-desc" className="mb-2 block text-xs font-extrabold text-faint">
+            Description <span className="font-semibold">(optional)</span>
+          </label>
+          <textarea
+            id="np-desc"
+            rows={3}
+            value={newProjectDesc}
+            onChange={(e) => setNewProjectDesc(e.target.value)}
+            placeholder="What is this project about?"
+            className={`${fieldCls} mb-[22px] min-h-[70px] resize-y`}
+          />
+
+          <div className="flex gap-2.5">
+            <button type="button" onClick={() => setNewProjectOpen(false)} className={`${btnSecondary} flex-1`}>
+              Cancel
+            </button>
+            <button type="button" onClick={createProject} disabled={creatingProject} className={`${btnPrimary} flex-1`}>
+              {creatingProject ? "Creating..." : "Create Project"}
+            </button>
+          </div>
+        </Modal>
+
+        <Modal open={deleteProjectOpen} onClose={() => setDeleteProjectOpen(false)}>
+          <div className="text-center">
+            <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-rose-500/10 text-rose-500">
+              <Icon d={I.trash} className="h-6 w-6" />
+            </span>
+            <h4 className="mb-2 text-lg font-extrabold">Delete this project?</h4>
+            <p className="mb-[22px] break-words text-sm leading-normal text-mute">
+              Every chat inside <strong>{activeProject?.name || "this project"}</strong> will be permanently deleted too.
+              This can't be undone.
+            </p>
+            <div className="flex gap-2.5">
+              <button type="button" onClick={() => setDeleteProjectOpen(false)} className={`${btnSecondary} flex-1`}>
+                Cancel
+              </button>
+              <button type="button" onClick={deleteProject} disabled={deletingProject} className={`${btnDanger} flex-1`}>
+                {deletingProject ? "Deleting..." : "Delete Project"}
               </button>
             </div>
           </div>
+        </Modal>
 
-          <div className="flex flex-col gap-2.5">
-            {projectThreads.length === 0 ? (
-              <EmptyState icon={I.clock} title="No chats in this project yet" hint="Start a new chat above to begin" />
-            ) : (
-              projectThreads.map((t) => (
-                <ThreadRow
-                  key={t.id}
-                  thread={t}
-                  active={t.id === activeThreadId}
-                  onOpen={openThread}
-                  onDelete={deleteThread}
-                />
-              ))
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ---------------- History ---------------- */}
-      {tab === "history" && (
-        <section>
-          <div className="mb-[18px] flex flex-wrap items-center justify-between gap-3.5 rounded-[20px] border border-line bg-surf p-6">
-            <div>
-              <div className="text-[15px] font-extrabold">Conversation History</div>
-              <div className="mt-0.5 text-[13px] text-mute">
-                Every chat you've had with ILLIA, pick one up where you left off
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={clearHistory}
-              disabled={clearing || threads.length === 0}
-              className={`${btnSecondary} ${btnSm}`}
-            >
-              {clearing ? "Clearing..." : "Clear All"}
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-2.5">
-            {threads.length === 0 ? (
-              <EmptyState icon={I.clock} title="No conversations yet" hint="Start a chat in Ask AI and it will show up here" />
-            ) : (
-              threads.map((t) => (
-                <ThreadRow
-                  key={t.id}
-                  thread={t}
-                  active={t.id === activeThreadId}
-                  projectName={projectName(t.projectId)}
-                  onOpen={openThread}
-                  onDelete={deleteThread}
-                />
-              ))
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ---------------- Modals ---------------- */}
-      <Modal open={newProjectOpen} onClose={() => setNewProjectOpen(false)}>
-        <span className="soft mb-4 grid h-14 w-14 place-items-center rounded-2xl text-violet-700 dark:text-violet-200">
-          <Icon d={I.folder} className="h-6 w-6" />
-        </span>
-        <h4 className="mb-1.5 text-lg font-extrabold">New project</h4>
-        <p className="mb-[18px] text-sm leading-normal text-mute">
-          Group chats about the same topic together, ILLIA keeps this context in mind across every chat inside it.
-        </p>
-
-        <label htmlFor="np-name" className="mb-2 block text-xs font-extrabold text-faint">
-          Name
-        </label>
-        <input
-          id="np-name"
-          autoFocus
-          maxLength={60}
-          value={newProjectName}
-          onChange={(e) => setNewProjectName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && createProject()}
-          placeholder="e.g. Ramadan Campaign"
-          className={`${fieldCls} mb-4`}
-        />
-
-        <label htmlFor="np-desc" className="mb-2 block text-xs font-extrabold text-faint">
-          Description <span className="font-semibold">(optional)</span>
-        </label>
-        <textarea
-          id="np-desc"
-          rows={3}
-          value={newProjectDesc}
-          onChange={(e) => setNewProjectDesc(e.target.value)}
-          placeholder="What is this project about?"
-          className={`${fieldCls} mb-[22px] min-h-[70px] resize-y`}
-        />
-
-        <div className="flex gap-2.5">
-          <button type="button" onClick={() => setNewProjectOpen(false)} className={`${btnSecondary} flex-1`}>
-            Cancel
-          </button>
-          <button type="button" onClick={createProject} disabled={creatingProject} className={`${btnPrimary} flex-1`}>
-            {creatingProject ? "Creating..." : "Create Project"}
-          </button>
-        </div>
-      </Modal>
-
-      <Modal open={deleteProjectOpen} onClose={() => setDeleteProjectOpen(false)}>
-        <div className="text-center">
-          <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-rose-500/10 text-rose-500">
-            <Icon d={I.trash} className="h-6 w-6" />
+        <Modal open={onboardOpen} onClose={() => closeOnboarding(true)}>
+          <span className="grad mb-4 grid h-[52px] w-[52px] place-items-center rounded-2xl text-white">
+            <Icon d={I.spark} className="h-6 w-6" />
           </span>
-          <h4 className="mb-2 text-lg font-extrabold">Delete this project?</h4>
-          <p className="mb-[22px] text-sm leading-normal text-mute">
-            Every chat inside <strong>{activeProject?.name || "this project"}</strong> will be permanently deleted too.
-            This can't be undone.
-          </p>
-          <div className="flex gap-2.5">
-            <button type="button" onClick={() => setDeleteProjectOpen(false)} className={`${btnSecondary} flex-1`}>
-              Cancel
+          <h4 className="mb-2 text-[19px] font-extrabold">{ONBOARDING[onboardIndex][0]}</h4>
+          <p className="min-h-[110px] text-sm leading-relaxed text-mute">{ONBOARDING[onboardIndex][1]}</p>
+
+          <div className="my-5 flex gap-[7px]">
+            {ONBOARDING.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Step ${i + 1}`}
+                onClick={() => setOnboardIndex(i)}
+                className={`h-2 rounded-full transition-all ${i === onboardIndex ? "w-[22px] bg-vio" : "w-2 bg-line"}`}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => closeOnboarding(true)}
+              className="px-1.5 py-3 text-[13.5px] font-bold text-faint hover:text-mute"
+            >
+              Skip
             </button>
-            <button type="button" onClick={deleteProject} disabled={deletingProject} className={`${btnDanger} flex-1`}>
-              {deletingProject ? "Deleting..." : "Delete Project"}
+            <button
+              type="button"
+              onClick={() => setOnboardIndex((i) => i - 1)}
+              className={`${btnSecondary} flex-1 ${onboardIndex === 0 ? "invisible" : ""}`}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => (lastStep ? closeOnboarding(true) : setOnboardIndex((i) => i + 1))}
+              className={`${btnPrimary} flex-1`}
+            >
+              {lastStep ? "Start Creating" : "Next"}
             </button>
           </div>
-        </div>
-      </Modal>
-
-      <Modal open={onboardOpen} onClose={() => closeOnboarding(true)}>
-        <span className="grad mb-4 grid h-[52px] w-[52px] place-items-center rounded-2xl text-white">
-          <Icon d={I.spark} className="h-6 w-6" />
-        </span>
-        <h4 className="mb-2 text-[19px] font-extrabold">{ONBOARDING[onboardIndex][0]}</h4>
-        <p className="min-h-[110px] text-sm leading-relaxed text-mute">{ONBOARDING[onboardIndex][1]}</p>
-
-        <div className="my-5 flex gap-[7px]">
-          {ONBOARDING.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`Step ${i + 1}`}
-              onClick={() => setOnboardIndex(i)}
-              className={`h-2 rounded-full transition-all ${i === onboardIndex ? "w-[22px] bg-vio" : "w-2 bg-line"}`}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between gap-2.5">
-          <button
-            type="button"
-            onClick={() => closeOnboarding(true)}
-            className="px-1.5 py-3 text-[13.5px] font-bold text-faint hover:text-mute"
-          >
-            Skip
-          </button>
-          <button
-            type="button"
-            onClick={() => setOnboardIndex((i) => i - 1)}
-            className={`${btnSecondary} flex-1 ${onboardIndex === 0 ? "invisible" : ""}`}
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={() => (lastStep ? closeOnboarding(true) : setOnboardIndex((i) => i + 1))}
-            className={`${btnPrimary} flex-1`}
-          >
-            {lastStep ? "Start Creating" : "Next"}
-          </button>
-        </div>
-      </Modal>
+        </Modal>
       </div>
     </div>
   );
