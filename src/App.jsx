@@ -26,7 +26,7 @@ import ContentCalendar from "./pages/ContentCalendar";
 import Profile from "./pages/Profile";
 import Templates from "./pages/Templates";
 import MediaLibrary from "./pages/MediaLibrary";
-
+import Analytics from "./pages/Analytics";
 import Create from "./components/Studio/Create";
 
 // Authentication Pages
@@ -130,10 +130,12 @@ const AuthenticatedApp = () => {
 
 
       {/* ANALYTICS PAGE */}
-
-      {/* Add your Analytics component here when available */}
-
-
+        <Route path="/studio/analytics" element={ 
+          <LayOut>
+            <Analytics /> 
+          </LayOut>
+        }
+        />
       {/* PROFILE PAGE */}
 
       <Route
