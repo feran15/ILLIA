@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import {
   Activity,
@@ -25,7 +24,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 
-import Sidebar from "../components/Studio/SideBar";
+// NOTE: Sidebar import removed. LayOut.jsx already renders the Sidebar.
 
 const stats = [
   {
@@ -395,7 +394,9 @@ function StatCard({ stat }) {
   return (
     <article className="rounded-[20px] border border-[#EEE9F2] bg-white p-4 transition hover:-translate-y-1 hover:shadow-lg sm:p-5">
       <div className="flex items-center justify-between gap-2">
-        <span className={`flex h-10 w-10 items-center justify-center rounded-[13px] ${colors.icon}`}>
+        <span
+          className={`flex h-10 w-10 items-center justify-center rounded-[13px] ${colors.icon}`}
+        >
           <Icon size={19} />
         </span>
 
@@ -512,8 +513,12 @@ function RecommendationCard({ item }) {
 
   return (
     <article className="overflow-hidden rounded-[20px] border border-[#EEE9F2] bg-white transition hover:-translate-y-1 hover:shadow-lg">
-      <div className={`flex h-[96px] items-center justify-between px-5 ${colors.panel}`}>
-        <span className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ${colors.icon}`}>
+      <div
+        className={`flex h-[96px] items-center justify-between px-5 ${colors.panel}`}
+      >
+        <span
+          className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ${colors.icon}`}
+        >
           <Icon size={23} />
         </span>
         <span className="text-[9px] font-extrabold tracking-[1px] text-[#81748F]">
@@ -523,7 +528,9 @@ function RecommendationCard({ item }) {
       </div>
 
       <div className="p-5">
-        <span className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-extrabold ${colors.tag}`}>
+        <span
+          className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-extrabold ${colors.tag}`}
+        >
           {item.tag}
         </span>
         <h3 className="mt-3 text-[13px] font-extrabold leading-5 text-[#30263B]">
@@ -562,7 +569,14 @@ function ProgressPanel() {
       <div className="flex items-center gap-4 py-3">
         <div className="relative flex h-[90px] w-[90px] shrink-0 items-center justify-center">
           <svg className="-rotate-90" viewBox="0 0 80 80">
-            <circle cx="40" cy="40" r="34" fill="none" stroke="#F0ECF5" strokeWidth="7" />
+            <circle
+              cx="40"
+              cy="40"
+              r="34"
+              fill="none"
+              stroke="#F0ECF5"
+              strokeWidth="7"
+            />
             <circle
               cx="40"
               cy="40"
@@ -624,7 +638,9 @@ function TrendPanel() {
               <span className="w-4 text-[10px] font-extrabold text-[#B2A9BE]">
                 0{index + 1}
               </span>
-              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${colors.icon}`}>
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${colors.icon}`}
+              >
                 <Hash size={17} />
               </span>
               <span className="min-w-0 flex-1">
@@ -645,7 +661,8 @@ function TrendPanel() {
 
       <p className="mt-3 rounded-xl bg-[#F8F5FC] px-3 py-2.5 text-[10px] leading-5 text-[#8E829F]">
         <Sparkles size={12} className="mr-1 inline text-violet-600" />
-        Sample trends for the UI preview. Connect your trends service for live data.
+        Sample trends for the UI preview. Connect your trends service for live
+        data.
       </p>
     </section>
   );
@@ -666,24 +683,39 @@ function UpcomingPanel() {
           const colors = colorStyles[post.color];
 
           return (
-            <div key={post.title} className="flex items-center gap-3 rounded-xl border border-[#F0ECF5] p-3">
+            <div
+              key={post.title}
+              className="flex items-center gap-3 rounded-xl border border-[#F0ECF5] p-3"
+            >
               <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[#F7F4FB]">
-                <span className="text-base font-black leading-5 text-[#392B49]">{post.day}</span>
-                <span className="text-[8px] font-extrabold tracking-wide text-[#9C91AC]">{post.month}</span>
+                <span className="text-base font-black leading-5 text-[#392B49]">
+                  {post.day}
+                </span>
+                <span className="text-[8px] font-extrabold tracking-wide text-[#9C91AC]">
+                  {post.month}
+                </span>
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] font-extrabold text-[#3B3048]">{post.title}</p>
+                <p className="truncate text-[11px] font-extrabold text-[#3B3048]">
+                  {post.title}
+                </p>
                 <p className="mt-1 flex items-center gap-1 text-[10px] text-[#9A92A6]">
                   <Clock3 size={11} /> {post.time} · {post.platform}
                 </p>
               </div>
 
-              <span className={`hidden rounded-lg px-2 py-1 text-[9px] font-bold sm:inline-flex ${colors.tag}`}>
+              <span
+                className={`hidden rounded-lg px-2 py-1 text-[9px] font-bold sm:inline-flex ${colors.tag}`}
+              >
                 Planned
               </span>
 
-              <a href="/calendar/" aria-label={`View ${post.title} in calendar`} className="rounded-lg p-1.5 text-[#A49BAF] hover:bg-[#F8F5FC]">
+              <a
+                href="/calendar/"
+                aria-label={`View ${post.title} in calendar`}
+                className="rounded-lg p-1.5 text-[#A49BAF] hover:bg-[#F8F5FC]"
+              >
                 <MoreHorizontal size={17} />
               </a>
             </div>
@@ -691,7 +723,10 @@ function UpcomingPanel() {
         })}
       </div>
 
-      <a href="/calendar/" className="mt-4 flex h-10 items-center justify-center gap-2 rounded-xl border border-dashed border-[#DCD2EA] text-[11px] font-extrabold text-violet-700 hover:bg-violet-50">
+      <a
+        href="/calendar/"
+        className="mt-4 flex h-10 items-center justify-center gap-2 rounded-xl border border-dashed border-[#DCD2EA] text-[11px] font-extrabold text-violet-700 hover:bg-violet-50"
+      >
         <Plus size={15} /> Add to calendar
       </a>
     </section>
@@ -721,20 +756,29 @@ function RecentWork({ search }) {
             return (
               <a
                 href="/create/"
-                onClick={() => sessionStorage.setItem("illia_home_prompt", work.title)}
+                onClick={() =>
+                  sessionStorage.setItem("illia_home_prompt", work.title)
+                }
                 key={work.title}
                 className="group flex items-center gap-3 py-3.5"
               >
-                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${colors.icon}`}>
+                <span
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${colors.icon}`}
+                >
                   <Icon size={19} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12px] font-extrabold text-[#3B3048]">{work.title}</span>
+                  <span className="block truncate text-[12px] font-extrabold text-[#3B3048]">
+                    {work.title}
+                  </span>
                   <span className="mt-1.5 block text-[10px] text-[#A49BAF]">
                     {work.type} · Edited {work.date.toLowerCase()}
                   </span>
                 </span>
-                <ChevronRight size={16} className="shrink-0 text-[#B5ADBF] group-hover:translate-x-1 group-hover:text-violet-600" />
+                <ChevronRight
+                  size={16}
+                  className="shrink-0 text-[#B5ADBF] group-hover:translate-x-1 group-hover:text-violet-600"
+                />
               </a>
             );
           })}
@@ -761,11 +805,17 @@ function InsightCard() {
         Consistency beats waiting for inspiration.
       </h3>
       <p className="mt-2 text-[11px] leading-5 text-[#85758F]">
-        Start with one useful idea, share it clearly, and give your audience a reason to come back.
+        Start with one useful idea, share it clearly, and give your audience a
+        reason to come back.
       </p>
       <a
         href="/create/"
-        onClick={() => sessionStorage.setItem("illia_home_prompt", "Create a post about why consistency beats waiting for inspiration.")}
+        onClick={() =>
+          sessionStorage.setItem(
+            "illia_home_prompt",
+            "Create a post about why consistency beats waiting for inspiration."
+          )
+        }
         className="mt-4 inline-flex items-center gap-2 text-[11px] font-extrabold text-violet-700"
       >
         Turn this into a post <ArrowRight size={13} />
@@ -788,85 +838,83 @@ export default function Home() {
     []
   );
 
+  // No <Sidebar /> and no <main> here: LayOut.jsx already provides both.
   return (
     <div className="min-h-screen bg-[#FCFBFD] text-[#292035]">
-      <div className="flex min-h-screen">
-        <Sidebar />
+      <Topbar search={search} setSearch={setSearch} />
 
-        <main className="min-w-0 flex-1">
-          <Topbar search={search} setSearch={setSearch} />
+      <div className="mx-auto max-w-[1600px] px-4 pb-28 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-10 xl:px-10">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[1.5px] text-violet-700">
+              Your workspace
+            </p>
+            <p className="mt-1 text-[11px] text-[#9A92A6]">{formattedDate}</p>
+          </div>
 
-          <div className="mx-auto max-w-[1600px] px-4 pb-28 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-10 xl:px-10">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[1.5px] text-violet-700">
-                  Your workspace
-                </p>
-                <p className="mt-1 text-[11px] text-[#9A92A6]">
-                  {formattedDate}
-                </p>
-              </div>
+          <a
+            href="/create/"
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-[#E9E1F3] bg-white px-3 text-[10px] font-bold text-[#665774] hover:text-violet-700"
+          >
+            <Plus size={14} /> New project
+          </a>
+        </div>
 
-              <a href="/create/" className="inline-flex h-9 items-center gap-2 rounded-xl border border-[#E9E1F3] bg-white px-3 text-[10px] font-bold text-[#665774] hover:text-violet-700">
-                <Plus size={14} /> New project
-              </a>
-            </div>
+        <WelcomeBanner />
 
-            <WelcomeBanner />
+        <section className="mb-8">
+          <div className="mb-4">
+            <h2 className="text-[15px] font-extrabold text-[#2A2135]">
+              Your overview
+            </h2>
+            <p className="mt-1 text-[11px] text-[#9A92A6]">
+              A quick look at your creative progress.
+            </p>
+          </div>
 
-            <section className="mb-8">
-              <div className="mb-4">
-                <h2 className="text-[15px] font-extrabold text-[#2A2135]">Your overview</h2>
-                <p className="mt-1 text-[11px] text-[#9A92A6]">
-                  A quick look at your creative progress.
-                </p>
-              </div>
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
+            {stats.map((stat) => (
+              <StatCard key={stat.label} stat={stat} />
+            ))}
+          </div>
+        </section>
 
-              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
-                {stats.map((stat) => (
-                  <StatCard key={stat.label} stat={stat} />
+        <div className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,.85fr)]">
+          <div className="min-w-0 space-y-8">
+            <Composer prompt={prompt} setPrompt={setPrompt} />
+
+            <section>
+              <SectionHeading
+                title="Picked for you"
+                subtitle="Fresh inspiration to get your creativity moving."
+                action="Explore ideas"
+                href="/ideas/"
+              />
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {ideas.map((item) => (
+                  <RecommendationCard key={item.title} item={item} />
                 ))}
               </div>
             </section>
 
-            <div className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,.85fr)]">
-              <div className="min-w-0 space-y-8">
-                <Composer prompt={prompt} setPrompt={setPrompt} />
-
-                <section>
-                  <SectionHeading
-                    title="Picked for you"
-                    subtitle="Fresh inspiration to get your creativity moving."
-                    action="Explore ideas"
-                    href="/ideas/"
-                  />
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {ideas.map((item) => (
-                      <RecommendationCard key={item.title} item={item} />
-                    ))}
-                  </div>
-                </section>
-
-                <RecentWork search={search} />
-              </div>
-
-              <div className="min-w-0 space-y-6">
-                <ProgressPanel />
-                <TrendPanel />
-                <UpcomingPanel />
-                <InsightCard />
-              </div>
-            </div>
-
-            <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE9F2] pt-5 text-[10px] text-[#A49BAF]">
-              <span>© {new Date().getFullYear()} ILLIA · Made for creators</span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Your creative workspace
-              </span>
-            </footer>
+            <RecentWork search={search} />
           </div>
-        </main>
+
+          <div className="min-w-0 space-y-6">
+            <ProgressPanel />
+            <TrendPanel />
+            <UpcomingPanel />
+            <InsightCard />
+          </div>
+        </div>
+
+        <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE9F2] pt-5 text-[10px] text-[#A49BAF]">
+          <span>© {new Date().getFullYear()} ILLIA · Made for creators</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Your creative workspace
+          </span>
+        </footer>
       </div>
     </div>
   );

@@ -10,39 +10,36 @@ import {
   Lightbulb,
   Menu,
   PenLine,
-  Plus,
   Settings,
-  Sparkles,
   TrendingUp,
   Users,
   X,
   Zap,
 } from "lucide-react";
+import { NavLink } from "react-router-dom";
 
 const navigation = [
   {
     title: "WORKSPACE",
     items: [
-      { label: "Home", href: "/home/", icon: Home },
-      { label: "Create", href: "/create/", icon: PenLine, badge: "AI" },
-      { label: "Trends", href: "/trends/", icon: TrendingUp },
-      { label: "Calendar", href: "/calendar/", icon: CalendarDays },
-      { label: "Analytics", href: "/analytics/", icon: Activity },
+      { label: "Home", href: "/studio", icon: Home, end: true },
+      { label: "Create", href: "/studio/create", icon: PenLine, badge: "AI" },
+      { label: "Trends", href: "/studio/trends", icon: TrendingUp },
+      { label: "Calendar", href: "/studio/calendar", icon: CalendarDays },
+      { label: "Analytics", href: "/studio/analytics", icon: Activity },
     ],
   },
   {
     title: "YOUR SPACE",
     items: [
-      { label: "Saved ideas", href: "/ideas/", icon: Lightbulb },
-      { label: "Profile", href: "/profile/", icon: Users },
+      { label: "Saved ideas", href: "/studio/ideas", icon: Lightbulb },
+      { label: "Profile", href: "/studio/profile", icon: Users },
     ],
   },
 ];
 
 function Brand() {
-  return (
-    <img className="w-24" src="/ILLIA.png" alt="" />
-  );
+  return <img className="w-24" src="/ILLIA.png" alt="ILLIA" />;
 }
 
 export default function Sidebar() {
@@ -89,7 +86,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-      
         <div className="space-y-8">
           {navigation.map((group) => (
             <div key={group.title}>
@@ -98,45 +94,47 @@ export default function Sidebar() {
               </p>
 
               <nav className="space-y-1">
-                {group.items.map(({ label, href, icon: Icon, badge }) => {
-                  const active =
-                    window.location.pathname.replace(/\/+$/, "") ===
-                    href.replace(/\/+$/, "");
-
-                  return (
-                    <a
+                {group.items.map(
+                  ({ label, href, icon: Icon, badge, end }) => (
+                    <NavLink
                       key={label}
-                      href={href}
+                      to={href}
+                      end={end}
                       onClick={() => setOpen(false)}
-                      aria-current={active ? "page" : undefined}
-                      className={`group flex min-h-[43px] items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition ${
-                        active
-                          ? "bg-violet-50 text-violet-700"
-                          : "text-[#777083] hover:bg-[#F8F6FB] hover:text-[#352541]"
-                      }`}
+                      className={({ isActive }) =>
+                        `group flex min-h-[43px] items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition ${
+                          isActive
+                            ? "bg-violet-50 text-violet-700"
+                            : "text-[#777083] hover:bg-[#F8F6FB] hover:text-[#352541]"
+                        }`
+                      }
                     >
-                      <Icon
-                        size={18}
-                        strokeWidth={active ? 2.4 : 1.9}
-                      />
+                      {({ isActive }) => (
+                        <>
+                          <Icon
+                            size={18}
+                            strokeWidth={isActive ? 2.4 : 1.9}
+                          />
 
-                      <span>{label}</span>
+                          <span>{label}</span>
 
-                      {badge && (
-                        <span className="ml-auto rounded-md bg-violet-100 px-1.5 py-0.5 text-[9px] font-black text-violet-700">
-                          {badge}
-                        </span>
+                          {badge && (
+                            <span className="ml-auto rounded-md bg-violet-100 px-1.5 py-0.5 text-[9px] font-black text-violet-700">
+                              {badge}
+                            </span>
+                          )}
+
+                          {isActive && (
+                            <ChevronRight
+                              size={15}
+                              className="ml-auto opacity-60"
+                            />
+                          )}
+                        </>
                       )}
-
-                      {active && (
-                        <ChevronRight
-                          size={15}
-                          className="ml-auto opacity-60"
-                        />
-                      )}
-                    </a>
-                  );
-                })}
+                    </NavLink>
+                  )
+                )}
               </nav>
             </div>
           ))}
@@ -159,28 +157,30 @@ export default function Sidebar() {
                 Make something your audience will remember.
               </p>
 
-              <a
-                href="/create/"
+              <NavLink
+                to="/studio/create"
                 onClick={() => setOpen(false)}
                 className="mt-4 inline-flex items-center gap-2 text-[11px] font-bold text-fuchsia-200 hover:text-white"
               >
                 Open creator studio <ArrowRight size={14} />
-              </a>
+              </NavLink>
             </div>
           </div>
 
-          <a
-            href="/settings/"
+          <NavLink
+            to="/studio/settings"
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 rounded-xl px-3 py-3 text-[12px] font-semibold text-[#777083] hover:bg-[#F8F6FB]"
           >
             <Settings size={18} />
             Settings
-          </a>
+          </NavLink>
 
           <button
             type="button"
-            onClick={() => window.alert("Connect your help and support page here.")}
+            onClick={() =>
+              window.alert("Connect your help and support page here.")
+            }
             className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[12px] font-semibold text-[#777083] hover:bg-[#F8F6FB]"
           >
             <CircleHelp size={18} />

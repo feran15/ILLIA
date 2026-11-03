@@ -313,7 +313,7 @@ function Message({ msg, onEdit, onTick }) {
 function TypingIndicator() {
   return (
     <div className="flex max-w-[82%] gap-3">
-      <span className="grad grid h-8 w-8 shrink-0 place-items-center rounded-full text-white">
+      <span className="grad grid h-8 w-8 shrink-0 place-items-center rounded-full text-black">
         <Icon d={I.spark} className="h-[15px] w-[15px]" />
       </span>
       <div className="flex items-center gap-1.5 rounded-2xl rounded-bl border border-line bg-alt px-[18px] py-3.5">
@@ -342,7 +342,7 @@ function ThreadRow({ thread, active, projectName, onOpen, onDelete }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13.5px] font-bold">{thread.title}</div>
-        <div className="mt-0.5 text-[11.5px] text-faint">
+        <div className="mt-0.5 text-[11.5px] text-black">
           {relativeTime(thread.updatedAt)}
           {projectName ? ` · ${projectName}` : ""}
         </div>
@@ -757,7 +757,71 @@ export default function Create() {
   const lastStep = onboardIndex === ONBOARDING.length - 1;
 
   return (
-    <div className="mx-auto w-full max-w-[980px]">
+    <div className="illia-create-theme min-h-screen w-full px-4 py-6">
+      <style>{`
+        .illia-create-theme {
+          background: #241528;
+          color: #FFFFFF;
+          color-scheme: dark;
+        }
+
+        .illia-create-theme .bg-surf {
+          background-color: #33213C !important;
+        }
+
+        .illia-create-theme .bg-alt {
+          background-color: #3B2945 !important;
+        }
+
+        .illia-create-theme .text-ink {
+          color: #FFFFFF !important;
+        }
+
+        .illia-create-theme .text-mute {
+          color: #D8C9DF !important;
+        }
+
+        .illia-create-theme .text-faint {
+          color: #B5A3BE !important;
+        }
+
+        .illia-create-theme .border-line {
+          border-color: #503B5B !important;
+        }
+
+        .illia-create-theme .soft {
+          background-color: #49305A !important;
+        }
+
+        .illia-create-theme .grad {
+          background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%) !important;
+          color: #FFFFFF !important;
+        }
+
+        .illia-create-theme textarea,
+        .illia-create-theme input {
+          background-color: #3B2945;
+          color: #FFFFFF;
+        }
+
+        .illia-create-theme textarea::placeholder,
+        .illia-create-theme input::placeholder {
+          color: #B5A3BE;
+        }
+
+        .illia-create-theme .text-black {
+          color: #FFFFFF !important;
+        }
+
+        .illia-create-theme .text-violet-700 {
+          color: #C4B5FD !important;
+        }
+
+        .illia-create-theme .hover\\:text-ink:hover {
+          color: #FFFFFF !important;
+        }
+      `}</style>
+      <div className="mx-auto w-full max-w-[980px]">
       {/* Tabs + help */}
       <div className="mb-[22px] flex items-center justify-between gap-3">
         <div className="inline-flex gap-1 rounded-full border border-line bg-alt p-1" role="tablist">
@@ -776,7 +840,7 @@ export default function Create() {
                 }
               }}
               className={`flex items-center gap-[7px] rounded-full px-3.5 py-2.5 text-sm font-bold transition sm:px-[18px] ${
-                tab === id ? "grad text-white shadow-lg shadow-violet-500/30" : "text-mute hover:text-ink"
+                tab === id ? "grad text-black shadow-lg shadow-violet-500/30" : "text-mute hover:text-ink"
               }`}
             >
               <Icon d={icon} className="h-4 w-4" />
@@ -1160,6 +1224,7 @@ export default function Create() {
           </button>
         </div>
       </Modal>
+      </div>
     </div>
   );
 }
