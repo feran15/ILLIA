@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AlertCircle, Copy, PenLine, RefreshCw, Search, TrendingUp } from "lucide-react";
-
+import {auth} from "../Firebase/config"
 /* ------------------------------------------------------------------ */
 /* Data: wire this part to your existing trends request                */
 /* ------------------------------------------------------------------ */
 
 // Set to false once fetchTrends below calls your real API.
-const USE_SAMPLE_DATA = true;
+const CORE_API_URL = import.meta.env.VITE_CORE_API_URL?.replace(/\/+$/, "");
 
 const SAMPLE = [
   ["Behind-the-scenes content", "Creator strategy", 482000],
@@ -23,17 +23,42 @@ const SAMPLE = [
   ["Brand collaborations", "Creator strategy", 52000],
 ].map(([title, category, volume]) => ({ title, category, volume }));
 
-async function fetchTrends(platformId) {
-  if (USE_SAMPLE_DATA) {
-    await new Promise((r) => setTimeout(r, 700));
-    return SAMPLE;
+
+async function fetchTrends(platformId, { refresh = false } = {}) {
+  const user = auth.currentUser;
+
+  if (!user) {
+    throw new Error("Please sign in to view trends.");
   }
-  // TODO: replace with your existing request. It should return an array of
-  // trends. Fields called title/name/topic/hashtag, category/type and
-  // volume/tweet_volume/posts/count are picked up automatically.
-  // const res = await fetch(`/api/trends?platform=${platformId}`);
-  // return (await res.json()).trends;
-  throw new Error("Connect fetchTrends to your trends API");
+
+  const token = await user.getIdToken();
+
+  const params = new URLSearchParams({
+    platform: platformId,
+    region: "NG",
+  });
+
+  if (refresh) {
+    params.set("refresh", "true");
+  }
+
+  const response = await fetch(
+    `${CORE_API_URL}/api/trends?${params.toString()}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Unable to fetch trends.");
+  }
+
+  return data.items || [];
 }
 
 /* ------------------------------------------------------------------ */
@@ -324,7 +349,7 @@ export default function TrendsDashboard() {
           />
         </label>
 
-        {USE_SAMPLE_DATA && (
+        {CORE_API_URL && (
           <p className="mb-4 rounded-xl bg-[#F8F5FC] px-3.5 py-2.5 text-xs text-[#8E829F]">
             Showing sample trends. Connect fetchTrends to your trends service for live data.
           </p>
