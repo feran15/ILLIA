@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../lib/api'
+import { api } from '../lib/api'
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Image, Upload, Sparkles, Loader2, Trash2, Download, Video, Plus, Pencil, Check, X } from 'lucide-react';

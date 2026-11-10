@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { toast } from "sonner";
-import { Icon } from "./UI"; // adjust the path to wherever your UI components live
+import { Icon } from "../components/Studio/UI"; // adjust the path to wherever your UI components live
+import { aiApi } from "../lib/api";
+
 
 /* ------------------------------------------------------------------ */
 /* Config + helpers                                                    */
 /* ------------------------------------------------------------------ */
 
-const API_BASE_URL = "https://ai.illiasmartai.workers.dev";
+// const API_BASE_URL = "https://ai.illiasmartai.workers.dev";
 
 const I = {
   spark: "M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z",
@@ -460,7 +462,7 @@ export default function Create() {
 
   const refreshThreads = useCallback(async () => {
     try {
-      const data = await callBackend("/api/create/threads", { method: "GET" });
+      const data = await aiApi.get("/api/create/threads", { method: "GET" });
       setThreads(data.threads || []);
     } catch {
       /* keep last list */
@@ -469,7 +471,7 @@ export default function Create() {
 
   const refreshProjects = useCallback(async () => {
     try {
-      const data = await callBackend("/api/create/projects", { method: "GET" });
+      const data = await aiApi.get("/api/create/projects", { method: "GET" });
       setProjects(data.projects || []);
     } catch {
       /* keep last list */
@@ -477,39 +479,24 @@ export default function Create() {
   }, []);
 
   // initial load: health check, lists, onboarding
-  useEffect(() => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    fetch(`${API_BASE_URL}/health`, { signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) setBanner(`Backend reachable but returned HTTP ${res.status} on /health.`);
-        else setBanner("");
-      })
-      .catch((err) =>
-        setBanner(
-          `Can't reach the backend at ${API_BASE_URL}. This is usually a CORS setting (ALLOWED_ORIGINS) or the Worker not being deployed. Details: ${err?.message || err}`
-        )
-      )
-      .finally(() => clearTimeout(timer));
+ useEffect(() => {
+  refreshThreads();
+  refreshProjects();
 
-    refreshThreads();
-    refreshProjects();
+  let onboardTimer;
 
-    let onboardTimer;
-    try {
-      if (!localStorage.getItem(ONBOARD_KEY)) {
-        onboardTimer = setTimeout(() => setOnboardOpen(true), 600);
-      }
-    } catch {
-      /* storage blocked */
+  try {
+    if (!localStorage.getItem(ONBOARD_KEY)) {
+      onboardTimer = setTimeout(() => setOnboardOpen(true), 600);
     }
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(onboardTimer);
-      controller.abort();
-    };
-  }, [refreshThreads, refreshProjects]);
+  } catch {
+    // Storage may be unavailable
+  }
 
+  return () => {
+    clearTimeout(onboardTimer);
+  };
+}, [refreshThreads, refreshProjects]);
   /* ---------- chat actions ---------- */
 
   function startNewChat(projectId = null) {
@@ -524,7 +511,7 @@ export default function Create() {
     setThreadTitle(thread.title || "New chat");
     setTab("ask");
     try {
-      const data = await callBackend(`/api/create/threads/${thread.id}/messages`, { method: "GET" });
+      const data = await aiApi.get(`/api/create/threads/${thread.id}/messages`, { method: "GET" });
       const loaded = (data.messages || [])
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m) => ({ id: nextId(), role: m.role, content: m.content, animate: false }));
@@ -536,7 +523,7 @@ export default function Create() {
 
   async function deleteThread(thread) {
     try {
-      await callBackend(`/api/create/threads/${thread.id}`, { method: "DELETE" });
+      await aiApi.delete(`/api/create/threads/${thread.id}`, { method: "DELETE" });
       if (thread.id === activeThreadId) startNewChat(activeProjectId);
       await refreshThreads();
     } catch {
@@ -571,7 +558,7 @@ export default function Create() {
     setSending(true);
 
     try {
-      const data = await callBackend("/api/create/chat", {
+      const data = await aiApi.post("/api/create/chat", {
         payload: {
           message: text,
           image_base64: isImage ? att.base64 : null,
@@ -723,7 +710,7 @@ export default function Create() {
     }
     setCreatingProject(true);
     try {
-      const data = await callBackend("/api/create/projects", {
+      const data = await aiApi.post("/api/create/projects", {
         payload: { name, description: newProjectDesc.trim() },
       });
       setNewProjectOpen(false);

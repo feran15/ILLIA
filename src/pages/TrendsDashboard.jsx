@@ -342,7 +342,7 @@ export default function TrendsDashboard() {
           <Skeleton />
         ) : error && !entry ? (
           <Notice icon={AlertCircle} title="Couldn't load trends" hint={error}>
-            <button
+            <button 
               type="button"
               onClick={load}
               className="mt-5 h-11 rounded-xl bg-[#2A1733] px-5 text-[13px] font-extrabold text-white hover:bg-[#3A2447]"

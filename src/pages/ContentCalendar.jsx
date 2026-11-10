@@ -16,7 +16,7 @@ import {
   subMonths,
 } from 'date-fns';
 import PostFormModal from '../components/Studio/PostFormModal';
-import api from '../lib/api';
+import { api } from '../lib/api';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */

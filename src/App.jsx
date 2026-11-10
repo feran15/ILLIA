@@ -27,7 +27,7 @@ import Profile from "./pages/Profile";
 import Templates from "./pages/Templates";
 import MediaLibrary from "./pages/MediaLibrary";
 import Analytics from "./pages/Analytics";
-import Create from "./components/Studio/Create";
+import Create from "./pages/Create";
 
 // Authentication Pages
 import Login from "./pages/Login";
