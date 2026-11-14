@@ -16,7 +16,11 @@ import {
   subMonths,
 } from 'date-fns';
 import PostFormModal from '../components/Studio/PostFormModal';
-import { api } from '../lib/api';
+import {
+  getPosts,
+  deletePost as deleteScheduledPost,
+  sendReminder as sendPostReminder,
+} from '../lib/CalendarApi';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -50,6 +54,19 @@ function dayLabel(dateStr) {
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function normalizePost(post) {
+  return {
+    ...post,
+    id: post.id,
+    title: post.title || post.topic || 'Untitled post',
+    scheduled_date: post.scheduled_date || post.scheduledDate || post.date,
+    scheduled_time: post.scheduled_time || post.scheduledTime || post.time,
+    platforms: Array.isArray(post.platforms) ? post.platforms : [],
+    status: post.status || 'scheduled',
+  };
+}
+
 
 /* ------------------------------------------------------------------ */
 /* Post card                                                           */
@@ -126,17 +143,19 @@ export default function ContentCalendar() {
   const [editingPost, setEditingPost] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['scheduledPosts'],
-    queryFn: async () => {
-      const res = await api('/api/calendar/posts');
-      return Array.isArray(res?.posts) ? res.posts : [];
-    },
-  });
-  const posts = Array.isArray(data) ? data : [];
+  
+const { data, isLoading, error } = useQuery({
+  queryKey: ['scheduledPosts'],
+  queryFn: async () => {
+    const result = await getPosts();
+    return result.map(normalizePost);
+  },
+});
+
+const posts = Array.isArray(data) ? data : [];
 
   const deletePost = useMutation({
-    mutationFn: (id) => api(`/api/calendar/posts/${id}`, { method: 'DELETE' }),
+   mutationFn: (id) => deleteScheduledPost(id),
     onSuccess: () => {
       toast.success('Post deleted.');
       queryClient.invalidateQueries({ queryKey: ['scheduledPosts'] });
@@ -146,7 +165,7 @@ export default function ContentCalendar() {
 
   // Placeholder from the original page: it only shows a toast, it does not send anything yet.
   const sendReminder = useMutation({
-    mutationFn: async (post) => post,
+    mutationFn: async (post) => sendPostReminder(post),
     onSuccess: (post) => toast.success(`Reminder sent for "${post.title}"`),
   });
 
@@ -401,13 +420,17 @@ export default function ContentCalendar() {
       </div>
 
       <PostFormModal
-        open={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setEditingPost(null);
-        }}
-        post={editingPost}
-      />
+  open={showModal}
+  onClose={() => {
+    setShowModal(false);
+    setEditingPost(null);
+
+    queryClient.invalidateQueries({
+      queryKey: ['scheduledPosts'],
+    });
+  }}
+  post={editingPost}
+/>
     </div>
   );
 }

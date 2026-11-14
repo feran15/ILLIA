@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2, Clock } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api } from '../../lib/CalendarApi';
+import { api, createPost, updatePost } from '../../lib/CalendarApi';
 const PLATFORMS = ['linkedin', 'instagram', 'twitter', 'facebook', 'tiktok'];
 
 const BEST_TIMES = {
@@ -43,26 +43,12 @@ export default function PostFormModal({ open, onClose, post }) {
     }
   }, [post, open]);
 
-  // const createPost = useMutation({
-  //   mutationFn: (data) => isEdit ? base44.entities.ScheduledPost.update(post.id, data) : base44.entities.ScheduledPost.create(data),
-  //   onSuccess: () => {
-  //     toast.success(isEdit ? 'Post updated!' : 'Post scheduled! You\'ll get reminders before it\'s time to post 🔔');
-  //     queryClient.invalidateQueries({ queryKey: ['scheduledPosts'] });
-  //     onClose();
-  //   }
-  // });
 
-const createPost = useMutation({
-  mutationFn: async (payload) => {
-    const endpoint = isEdit
-      ? `/api/calendar/posts/${post.id}`
-      : '/api/calendar/posts';
-
-    return api(endpoint, {
-      method: isEdit ? 'PUT' : 'POST',
-      body: JSON.stringify(payload),
-    });
-  },
+const createPostMutation = useMutation({
+  mutationFn: (payload) =>
+    isEdit
+      ? updatePost(post.id, payload)
+      : createPost(payload),
 
   onSuccess: async () => {
     await queryClient.invalidateQueries({
@@ -70,22 +56,15 @@ const createPost = useMutation({
     });
 
     toast.success(
-      isEdit
-        ? 'Post updated successfully!'
-        : 'Post scheduled successfully!'
+      isEdit ? 'Post updated successfully!' : 'Post scheduled successfully!'
     );
 
     onClose();
   },
 
   onError: (err) => {
-    console.error(err);
-
-    toast.error(
-      err.data?.error ||
-      err.message ||
-      'Something went wrong'
-    );
+    console.error('Calendar save error:', err);
+    toast.error(err.message || 'Something went wrong.');
   },
 });
 
@@ -93,27 +72,35 @@ const createPost = useMutation({
     setPlatforms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
   };
 
-  const generateWithAI = async () => {
-    if (!title.trim()) return toast.error('Add a title/topic first!');
-    setAiLoading(true);
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `Write an engaging social media post about: "${title}". Make it compelling, with a hook, value, and call-to-action. Include relevant hashtags. Keep it under 300 words.`
+const generateWithAI = async () => {
+  if (!title.trim()) {
+    return toast.error('Add a title/topic first!');
+  }
+
+  setAiLoading(true);
+
+  try {
+    const response = await api.post('/api/calendar/draft', {
+      topic: title,
+      platforms,
     });
-    setContent(response);
+
+    setContent(
+      typeof response.content === 'string'
+        ? response.content
+        : ''
+    );
+
+    toast.success('AI post generated!');
+  } catch (error) {
+    console.error('AI generation error:', error);
+    toast.error(error.message || 'Failed to generate post.');
+  } finally {
     setAiLoading(false);
-  };
+  }
+};
 
-  const handleSave = () => {
-  console.log('BUTTON CLICKED');
-
-  console.log({
-    title,
-    content,
-    platforms,
-    date,
-    time,
-  });
-
+ const handleSave = () => {
   if (
     !title.trim() ||
     !content.trim() ||
@@ -121,23 +108,21 @@ const createPost = useMutation({
     !date ||
     !time
   ) {
-    console.log('VALIDATION FAILED');
-
     return toast.error(
       'Please fill in all fields and select at least one platform.'
     );
   }
 
-  console.log('VALIDATION PASSED');
-
-  createPost.mutate({
+  const payload = {
     title,
     content,
     platforms,
     scheduled_at: `${date}T${time}:00`,
     publish_mode: publishMode,
     ai_generated: false,
-  });
+  };
+
+  createPostMutation.mutate(payload);
 };
 
   return (
@@ -221,10 +206,16 @@ const createPost = useMutation({
           {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button variant="outline" onClick={onClose} className="flex-1 border-border text-foreground hover:bg-muted">Cancel</Button>
-            <Button onClick={handleSave} disabled={createPost.isPending} className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white shadow-lg shadow-primary/30">
-              {createPost.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {isEdit ? 'Save Changes' : 'Schedule Post'}
-            </Button>
+           <Button
+  onClick={handleSave}
+  disabled={createPostMutation.isPending}
+  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white shadow-lg shadow-primary/30"
+>
+  {createPostMutation.isPending && (
+    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+  )}
+  {isEdit ? 'Save Changes' : 'Schedule Post'}
+</Button>
           </div>
         </div>
       </DialogContent>

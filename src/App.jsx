@@ -28,6 +28,7 @@ import Templates from "./pages/Templates";
 import MediaLibrary from "./pages/MediaLibrary";
 import Analytics from "./pages/Analytics";
 import Create from "./pages/Create";
+import Settings from "./pages/Settings";
 
 // Authentication Pages
 import Login from "./pages/Login";
@@ -147,6 +148,15 @@ const AuthenticatedApp = () => {
         }
       />
 
+      {/* SETTINGS PAGE */}
+        <Route
+        path="/studio/settings"
+        element={
+          <LayOut>
+            <Settings />
+          </LayOut>
+        }
+        />
 
       {/* TEMPLATES PAGE */}
 

@@ -25,6 +25,12 @@ const SAMPLE = [
 
 
 async function fetchTrends(platformId, { refresh = false } = {}) {
+  if (!CORE_API_URL) {
+    throw new Error(
+      "Core API URL is missing. Check your VITE_CORE_API_URL environment variable."
+    );
+  }
+
   const user = auth.currentUser;
 
   if (!user) {
@@ -58,9 +64,8 @@ async function fetchTrends(platformId, { refresh = false } = {}) {
     throw new Error(data.error || "Unable to fetch trends.");
   }
 
-  return data.items || [];
+  return Array.isArray(data.items) ? data.items : [];
 }
-
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -86,12 +91,23 @@ function parseVolume(v) {
 
 function normalize(raw, i) {
   const title = raw.title || raw.name || raw.topic || raw.hashtag || String(raw);
+
   return {
-    id: `${i}-${title}`,
+    id: raw.id || `${i}-${title}`,
     rank: i + 1,
     title,
     category: raw.category || raw.type || "",
-    volume: parseVolume(raw.volume ?? raw.tweet_volume ?? raw.posts ?? raw.count),
+    volume: parseVolume(
+      raw.volume ??
+      raw.viewsLabel ??
+      raw.tweet_volume ??
+      raw.posts ??
+      raw.count
+    ),
+    viewsLabel: raw.viewsLabel || "",
+    sourcePlatform: raw.sourcePlatform || raw.platform || "",
+    relativeTime: raw.relativeTime || raw.badge || "",
+    url: raw.url || "",
   };
 }
 
@@ -107,8 +123,17 @@ function timeAgo(ts) {
 /* ------------------------------------------------------------------ */
 
 function Meta({ trend, className = "" }) {
-  const parts = [trend.category, trend.volume != null ? `${compact.format(trend.volume)} posts` : ""].filter(Boolean);
-  return parts.length ? <p className={className}>{parts.join(" · ")}</p> : null;
+  const parts = [
+    trend.category,
+    trend.viewsLabel || (
+      trend.volume != null ? compact.format(trend.volume) : ""
+    ),
+    trend.sourcePlatform,
+  ].filter(Boolean);
+
+  return parts.length ? (
+    <p className={className}>{parts.join(" · ")}</p>
+  ) : null;
 }
 
 function FeaturedTrend({ trend, platform, onCreate, onCopy }) {
