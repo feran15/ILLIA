@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   UserRound,
   Link2,
@@ -23,8 +23,46 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import { db } from "../Firebase/config";
 import { auth } from "../Firebase/auth";
+
+// Base URL of the ILLIA core Worker
+const API_BASE = "https://core.illiasmartai.workers.dev";
+
+// Calls the Worker with the signed-in user's Firebase ID token.
+async function api(path, options = {}) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Please sign in again");
+
+  const token = await user.getIdToken();
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {}),
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `Request failed (${response.status})`);
+  }
+  return data;
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Postproxy may report X as "x"; the rest of the app uses "twitter".
+function normalizePlatform(platform) {
+  const p = String(platform || "").toLowerCase();
+  return p === "x" ? "twitter" : p;
+}
+
+function isActiveChannel(channel) {
+  return channel && (channel.status === "active" || channel.status === "connected");
+}
 
 // lucide-react no longer ships brand icons, so these two are drawn here
 const Instagram = ({ size = 20 }) => (
@@ -67,7 +105,6 @@ const PLATFORMS = [
     color: "#E1306C",
     bg: "#FFF0F5",
     icon: Instagram,
-    placeholder: "@yourusername",
   },
   {
     id: "twitter",
@@ -76,7 +113,6 @@ const PLATFORMS = [
     color: "#202020",
     bg: "#F3F3F3",
     icon: AtSign,
-    placeholder: "@handle",
   },
   {
     id: "linkedin",
@@ -85,7 +121,6 @@ const PLATFORMS = [
     color: "#0A66C2",
     bg: "#EAF4FF",
     icon: BriefcaseBusiness,
-    placeholder: "Profile URL or username",
   },
   {
     id: "tiktok",
@@ -94,7 +129,6 @@ const PLATFORMS = [
     color: "#111111",
     bg: "#F1F1F1",
     icon: Music2,
-    placeholder: "@tiktokhandle",
   },
   {
     id: "facebook",
@@ -103,7 +137,6 @@ const PLATFORMS = [
     color: "#1877F2",
     bg: "#EAF2FF",
     icon: Facebook,
-    placeholder: "Page name or URL",
   },
 ];
 
@@ -198,8 +231,12 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [connectedAccounts, setConnectedAccounts] = useState([]);
-  const [socialHandles, setSocialHandles] = useState({});
+  // Real connected accounts, returned by the Worker (GET /api/profile)
+  const [channels, setChannels] = useState([]);
+  const [connectingId, setConnectingId] = useState(null);
+  const [disconnectingId, setDisconnectingId] = useState(null);
+  const [syncingPlatform, setSyncingPlatform] = useState(null);
+
   const [remindersEmail, setRemindersEmail] = useState(true);
   const [remindersInApp, setRemindersInApp] = useState(true);
   const [niche, setNiche] = useState("");
@@ -209,18 +246,59 @@ export default function Profile() {
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [checkingTrends, setCheckingTrends] = useState(false);
 
-  useEffect(() => {
-    const loadProfile = async () => {
+  const handledReturn = useRef(false);
+
+  const refreshChannels = useCallback(async () => {
+    const data = await api("/api/profile");
+    const list = (data.connectedChannels || []).filter(isActiveChannel);
+    setChannels(list);
+    return list;
+  }, []);
+
+  // After OAuth the user lands on /profile/?connected=<platform>. The account
+  // only shows up once Postproxy's webhook reaches the Worker, so poll briefly.
+  const handleOAuthReturn = useCallback(
+    async (platformKey) => {
+      const label =
+        PLATFORMS.find((p) => p.id === platformKey)?.label || platformKey;
+
+      // Clean the URL so a refresh doesn't repeat this
+      window.history.replaceState({}, "", window.location.pathname);
+      setSyncingPlatform(platformKey);
+
       try {
-        const currentUser = auth.currentUser;
-
-        if (!currentUser) {
-          setLoading(false);
-          return;
+        for (let attempt = 0; attempt < 6; attempt++) {
+          const list = await refreshChannels();
+          if (list.some((c) => normalizePlatform(c.platform) === platformKey)) {
+            toast.success(`${label} connected`);
+            return;
+          }
+          await sleep(2000);
         }
+        toast.info(
+          `${label} is still finishing up. Refresh this page in a moment.`
+        );
+      } catch (error) {
+        console.error(error);
+        toast.error("Couldn't confirm the connection. Please refresh.");
+      } finally {
+        setSyncingPlatform(null);
+      }
+    },
+    [refreshChannels]
+  );
 
-        const ref = doc(db, "users", currentUser.uid);
-        const snap = await getDoc(ref);
+  useEffect(() => {
+    // Wait for Firebase to restore the session instead of reading
+    // auth.currentUser immediately (it is null for a moment after a reload).
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const snap = await getDoc(doc(db, "users", currentUser.uid));
 
         const data = snap.exists()
           ? snap.data()
@@ -232,8 +310,6 @@ export default function Profile() {
         setUser(data);
         setNiche(data.niche || "");
         setUsername(data.username || "");
-        setConnectedAccounts(data.connected_accounts || []);
-        setSocialHandles(data.social_handles || {});
         setRemindersEmail(data.reminders_email !== false);
         setRemindersInApp(data.reminders_in_app !== false);
         setAlertCategories(data.alert_categories || []);
@@ -244,17 +320,62 @@ export default function Profile() {
       } finally {
         setLoading(false);
       }
-    };
 
-    loadProfile();
-  }, []);
+      try {
+        await refreshChannels();
+      } catch (error) {
+        console.error(error);
+        toast.error("Couldn't load your connected accounts");
+      }
 
-  const toggleAccount = (platformId) => {
-    setConnectedAccounts((previous) =>
-      previous.includes(platformId)
-        ? previous.filter((id) => id !== platformId)
-        : [...previous, platformId]
-    );
+      if (!handledReturn.current) {
+        handledReturn.current = true;
+        const returned = new URLSearchParams(window.location.search).get(
+          "connected"
+        );
+        if (returned) handleOAuthReturn(returned);
+      }
+    });
+
+    return unsubscribe;
+  }, [refreshChannels, handleOAuthReturn]);
+
+  const connectPlatform = async (platformId) => {
+    try {
+      setConnectingId(platformId);
+      const { url } = await api("/api/postproxy/connect", {
+        method: "POST",
+        body: JSON.stringify({ platform: platformId }),
+      });
+
+      if (!url) throw new Error("No connection link was returned");
+      window.location.href = url; // hand off to the platform's sign-in
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Couldn't start the connection");
+      setConnectingId(null);
+    }
+  };
+
+  const disconnectChannel = async (channel, label) => {
+    const name = channel.name || channel.username || label;
+    if (!window.confirm(`Disconnect ${name}? Scheduled auto-posts to it will stop.`)) {
+      return;
+    }
+
+    try {
+      setDisconnectingId(channel.id);
+      await api(`/api/postproxy/profiles/${encodeURIComponent(channel.id)}`, {
+        method: "DELETE",
+      });
+      setChannels((previous) => previous.filter((c) => c.id !== channel.id));
+      toast.success(`${label} disconnected`);
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Couldn't disconnect this account");
+    } finally {
+      setDisconnectingId(null);
+    }
   };
 
   const addAlertCategory = () => {
@@ -288,6 +409,8 @@ export default function Profile() {
     try {
       setSaving(true);
 
+      // Connected accounts are managed by the Worker, so they are not
+      // written from here.
       await setDoc(
         doc(db, "users", currentUser.uid),
         {
@@ -295,8 +418,6 @@ export default function Profile() {
           full_name: currentUser.displayName || user?.full_name || "Creator",
           niche,
           username,
-          connected_accounts: connectedAccounts,
-          social_handles: socialHandles,
           reminders_email: remindersEmail,
           reminders_in_app: remindersInApp,
           alert_categories: alertCategories,
@@ -331,6 +452,12 @@ export default function Profile() {
     user?.plan === "free" &&
     user?.planRenewalDate &&
     new Date(user.planRenewalDate) < new Date();
+
+  const channelsByPlatform = (platformId) =>
+    channels.filter((c) => normalizePlatform(c.platform) === platformId);
+  const connectedCount = PLATFORMS.filter(
+    (p) => channelsByPlatform(p.id).length > 0
+  ).length;
 
   return (
     // LayOut already provides <main> and the header, so this is a plain div
@@ -400,18 +527,16 @@ export default function Profile() {
 
               <div className="mt-5 border-t border-[#F0ECF3] pt-4">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#898290]">Social accounts</span>
+                  <span className="text-[#898290]">Connected accounts</span>
                   <span className="font-semibold text-[#39303F]">
-                    {connectedAccounts.length} of {PLATFORMS.length}
+                    {connectedCount} of {PLATFORMS.length}
                   </span>
                 </div>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#F0ECF3]">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#EC4899] transition-all"
                     style={{
-                      width: `${
-                        (connectedAccounts.length / PLATFORMS.length) * 100
-                      }%`,
+                      width: `${(connectedCount / PLATFORMS.length) * 100}%`,
                     }}
                   />
                 </div>
@@ -490,13 +615,16 @@ export default function Profile() {
               <SectionHeader
                 icon={Link2}
                 title="Social platforms"
-                description="Manage the platforms associated with your creator workflow."
+                description="Connect your accounts so Illia can publish your scheduled posts."
               />
 
               <div className="space-y-3">
                 {PLATFORMS.map((platform) => {
                   const Icon = platform.icon;
-                  const isConnected = connectedAccounts.includes(platform.id);
+                  const accounts = channelsByPlatform(platform.id);
+                  const isConnected = accounts.length > 0;
+                  const isConnecting = connectingId === platform.id;
+                  const isSyncing = syncingPlatform === platform.id;
 
                   return (
                     <div
@@ -527,7 +655,13 @@ export default function Profile() {
                               {isConnected && (
                                 <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
                                   <Check size={12} />
-                                  Selected
+                                  Connected
+                                </span>
+                              )}
+                              {isSyncing && (
+                                <span className="flex items-center gap-1 text-[10px] font-semibold text-[#7C3AED]">
+                                  <Loader2 size={12} className="animate-spin" />
+                                  Finishing connection
                                 </span>
                               )}
                             </div>
@@ -537,42 +671,80 @@ export default function Profile() {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => toggleAccount(platform.id)}
-                          className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                            isConnected
-                              ? "border border-[#E3D5F8] bg-[#F4EDFF] text-[#6D28D9] hover:bg-[#EDE2FF]"
-                              : "border border-[#E5DFE9] bg-white text-[#50465B] hover:border-[#BFA6E8] hover:text-[#6D28D9]"
-                          }`}
-                        >
-                          {isConnected ? "Remove" : "Select account"}
-                        </button>
+                        {!isConnected && (
+                          <button
+                            type="button"
+                            onClick={() => connectPlatform(platform.id)}
+                            disabled={isConnecting || isSyncing}
+                            className="flex items-center gap-2 rounded-lg border border-[#E5DFE9] bg-white px-3 py-2 text-xs font-semibold text-[#50465B] transition-colors hover:border-[#BFA6E8] hover:text-[#6D28D9] disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {isConnecting && (
+                              <Loader2 size={13} className="animate-spin" />
+                            )}
+                            {isConnecting ? "Opening..." : "Connect"}
+                          </button>
+                        )}
                       </div>
 
-                      <div className="mt-4">
-                        <input
-                          value={socialHandles[platform.id] || ""}
-                          onChange={(event) =>
-                            setSocialHandles((previous) => ({
-                              ...previous,
-                              [platform.id]: event.target.value,
-                            }))
-                          }
-                          placeholder={platform.placeholder}
-                          className="w-full rounded-lg border border-[#EAE5EF] bg-white px-3 py-2.5 text-xs text-[#30263A] outline-none placeholder:text-[#B0AAB7] focus:border-[#9B72E8] focus:ring-2 focus:ring-[#7C3AED]/10"
-                        />
-                      </div>
+                      {isConnected && (
+                        <div className="mt-4 space-y-2">
+                          {accounts.map((account) => {
+                            const isDisconnecting =
+                              disconnectingId === account.id;
+                            const accountName =
+                              account.name ||
+                              account.username ||
+                              platform.label;
+
+                            return (
+                              <div
+                                key={account.id}
+                                className="flex items-center justify-between gap-3 rounded-lg border border-[#EAE5EF] bg-white px-3 py-2.5"
+                              >
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs font-semibold text-[#30263A]">
+                                    {accountName}
+                                  </p>
+                                  {account.username &&
+                                    account.username !== accountName && (
+                                      <p className="mt-0.5 truncate text-[11px] text-[#898290]">
+                                        @{String(account.username).replace(/^@/, "")}
+                                      </p>
+                                    )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    disconnectChannel(account, platform.label)
+                                  }
+                                  disabled={isDisconnecting}
+                                  className="flex shrink-0 items-center gap-2 rounded-lg border border-[#E3D5F8] bg-[#F4EDFF] px-3 py-1.5 text-xs font-semibold text-[#6D28D9] transition-colors hover:bg-[#EDE2FF] disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  {isDisconnecting && (
+                                    <Loader2
+                                      size={13}
+                                      className="animate-spin"
+                                    />
+                                  )}
+                                  {isDisconnecting
+                                    ? "Disconnecting..."
+                                    : "Disconnect"}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
 
               <p className="mt-4 rounded-lg bg-[#F8F6FA] p-3 text-xs leading-5 text-[#7F7788]">
-                Selecting a platform here records your preference. It does not
-                authorize Illia to access that platform. Real account
-                connections require the relevant platform's authentication
-                flow and API permissions.
+                Connecting opens the platform's own sign-in page. Illia only
+                gets permission to publish the posts you schedule, and you can
+                disconnect at any time.
               </p>
             </section>
 
