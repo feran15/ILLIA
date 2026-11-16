@@ -1,4 +1,12 @@
-import { useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import {
   Activity,
   ArrowRight,
@@ -195,13 +203,99 @@ const colorStyles = {
   },
 };
 
+/**
+ * Dropdown panel rendered in a portal on document.body, positioned under its
+ * trigger with position: fixed.
+ *
+ * Why a portal: the old dropdowns were absolutely positioned inside the
+ * header. Any ancestor with overflow hidden/auto, a transform, a backdrop
+ * filter, or a lower z-index than the layout's own header/sidebar can clip or
+ * cover them. Rendering on <body> sidesteps all of that.
+ */
+function AnchoredPanel({ open, anchorRef, onClose, width = 256, children }) {
+  const panelRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width });
+
+  const place = useCallback(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+
+    const rect = anchor.getBoundingClientRect();
+    const margin = 8;
+    const panelWidth = Math.min(width, window.innerWidth - margin * 2);
+
+    // Right-align to the trigger, then keep fully on screen.
+    let left = rect.right - panelWidth;
+    left = Math.max(margin, Math.min(left, window.innerWidth - panelWidth - margin));
+
+    setPos({ top: rect.bottom + 8, left, width: panelWidth });
+  }, [anchorRef, width]);
+
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open, place]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const onPointerDown = (event) => {
+      if (panelRef.current?.contains(event.target)) return;
+      if (anchorRef.current?.contains(event.target)) return;
+      onClose();
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true); // capture: catches inner scroll containers
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onClose, place, anchorRef]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 9999,
+      }}
+      className="rounded-2xl border border-[#EEE9F2] bg-white p-3 shadow-xl"
+    >
+      {children}
+    </div>,
+    document.body
+  );
+}
+
 function Topbar({ search, setSearch }) {
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null); // "notifications" | "profile" | null
+  const notificationsRef = useRef(null);
+  const profileRef = useRef(null);
+
+  const closeMenu = useCallback(() => setOpenMenu(null), []);
+  const toggleMenu = (name) =>
+    setOpenMenu((current) => (current === name ? null : name));
 
   return (
-    <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-3 border-b border-[#EEE9F2] bg-[#FCFBFD]/95 px-4 backdrop-blur-xl sm:px-7 xl:px-10">
-      <div className="pl-12 text-[12px] text-[#9A91A5] lg:pl-0">
+    // Not sticky: LayOut already has a sticky header, and a second sticky
+    // header at top-0 would just slide underneath it.
+    <header className="relative z-30 flex h-16 items-center justify-between gap-3 border-b border-[#EEE9F2] bg-[#FCFBFD] px-4 sm:h-[72px] sm:px-7 xl:px-10">
+      <div className="min-w-0 truncate pl-12 text-xs text-[#9A91A5] lg:pl-0">
         Workspace <ChevronRight size={13} className="mx-1 inline" />
         <span className="font-bold text-[#392D45]">Home</span>
       </div>
@@ -217,76 +311,78 @@ function Topbar({ search, setSearch }) {
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search your workspace..."
             aria-label="Search your workspace"
-            className="h-10 w-48 rounded-xl border border-[#EEE9F2] bg-white pl-10 pr-3 text-[11px] outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50 xl:w-64"
+            className="h-10 w-48 rounded-xl border border-[#EEE9F2] bg-white pl-10 pr-3 text-xs outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50 xl:w-64"
           />
         </label>
 
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setNotificationsOpen((value) => !value)}
-            aria-label="Notifications"
-            aria-expanded={notificationsOpen}
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#EEE9F2] bg-white text-[#6E647C] hover:text-violet-700"
-          >
-            <Bell size={18} />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-fuchsia-500" />
-          </button>
+        <button
+          ref={notificationsRef}
+          type="button"
+          onClick={() => toggleMenu("notifications")}
+          aria-label="Notifications"
+          aria-haspopup="true"
+          aria-expanded={openMenu === "notifications"}
+          className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#EEE9F2] bg-white text-[#6E647C] hover:text-violet-700"
+        >
+          <Bell size={18} />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-fuchsia-500" />
+        </button>
 
-          {notificationsOpen && (
-            <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-[#EEE9F2] bg-white p-4 shadow-xl">
-              <p className="text-sm font-extrabold text-[#30243C]">
-                Notifications
-              </p>
-              <p className="mt-2 text-xs leading-5 text-[#898094]">
-                You're all caught up. Connect your accounts to receive activity
-                updates here.
-              </p>
-            </div>
-          )}
-        </div>
+        <AnchoredPanel
+          open={openMenu === "notifications"}
+          anchorRef={notificationsRef}
+          onClose={closeMenu}
+          width={288}
+        >
+          <p className="text-sm font-extrabold text-[#30243C]">Notifications</p>
+          <p className="mt-2 text-xs leading-5 text-[#898094]">
+            You're all caught up. Connect your accounts to receive activity
+            updates here.
+          </p>
+        </AnchoredPanel>
 
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setProfileOpen((value) => !value)}
-            aria-expanded={profileOpen}
-            className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-white"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 via-pink-200 to-violet-200 text-xs font-black text-[#5D365F]">
-              PA
+        <button
+          ref={profileRef}
+          type="button"
+          onClick={() => toggleMenu("profile")}
+          aria-haspopup="true"
+          aria-expanded={openMenu === "profile"}
+          aria-label="Account menu"
+          className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-white"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 via-pink-200 to-violet-200 text-xs font-black text-[#5D365F]">
+            PA
+          </span>
+          <span className="hidden text-left sm:block">
+            <span className="block text-xs font-extrabold text-[#33283F]">
+              Creator
             </span>
-            <span className="hidden text-left sm:block">
-              <span className="block text-xs font-extrabold text-[#33283F]">
-                Creator
-              </span>
-              <span className="mt-0.5 block text-[10px] text-[#9C93A9]">
-                Free plan
-              </span>
+            <span className="mt-0.5 block text-[11px] text-[#9C93A9]">
+              Free plan
             </span>
-            <ChevronDown
-              size={14}
-              className="hidden text-[#9C93A9] sm:block"
-            />
-          </button>
+          </span>
+          <ChevronDown size={14} className="hidden text-[#9C93A9] sm:block" />
+        </button>
 
-          {profileOpen && (
-            <div className="absolute right-0 top-12 z-50 w-44 rounded-xl border border-[#EEE9F2] bg-white p-2 shadow-xl">
-              <a
-                href="/profile/"
-                className="block rounded-lg px-3 py-2 text-xs font-semibold text-[#5F546D] hover:bg-violet-50"
-              >
-                Your profile
-              </a>
-              <a
-                href="/settings/"
-                className="block rounded-lg px-3 py-2 text-xs font-semibold text-[#5F546D] hover:bg-violet-50"
-              >
-                Settings
-              </a>
-            </div>
-          )}
-        </div>
+        <AnchoredPanel
+          open={openMenu === "profile"}
+          anchorRef={profileRef}
+          onClose={closeMenu}
+          width={192}
+        >
+          <a
+            href="/profile/"
+            className="block rounded-lg px-3 py-2.5 text-xs font-semibold text-[#5F546D] hover:bg-violet-50"
+          >
+            Your profile
+          </a>
+          <a
+            href="/settings/"
+            className="block rounded-lg px-3 py-2.5 text-xs font-semibold text-[#5F546D] hover:bg-violet-50"
+          >
+            Settings
+          </a>
+        </AnchoredPanel>
       </div>
     </header>
   );
@@ -296,20 +392,18 @@ function SectionHeading({ title, subtitle, action, href = "/create/" }) {
   return (
     <div className="mb-4 flex items-end justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="text-[15px] font-extrabold tracking-[-0.4px] text-[#2A2135]">
+        <h2 className="text-base font-extrabold tracking-[-0.4px] text-[#2A2135]">
           {title}
         </h2>
         {subtitle && (
-          <p className="mt-1 text-[11px] leading-5 text-[#968DA2]">
-            {subtitle}
-          </p>
+          <p className="mt-1 text-xs leading-5 text-[#968DA2]">{subtitle}</p>
         )}
       </div>
 
       {action && (
         <a
           href={href}
-          className="inline-flex shrink-0 items-center gap-1 text-[11px] font-extrabold text-violet-700 hover:gap-2"
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-extrabold text-violet-700 hover:gap-2"
         >
           {action} <ArrowRight size={13} />
         </a>
@@ -320,7 +414,7 @@ function SectionHeading({ title, subtitle, action, href = "/create/" }) {
 
 function WelcomeBanner() {
   return (
-    <section className="relative isolate mb-7 overflow-hidden rounded-[28px] bg-[#241832] p-6 text-white sm:p-8 xl:p-10">
+    <section className="relative isolate mb-7 overflow-hidden rounded-3xl bg-[#241832] p-5 text-white sm:rounded-[28px] sm:p-8 xl:p-10">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -right-20 -top-32 h-80 w-80 rounded-full bg-violet-600/35 blur-[80px]" />
         <div className="absolute right-[28%] top-16 h-48 w-48 rounded-full bg-fuchsia-500/20 blur-[70px]" />
@@ -329,34 +423,34 @@ function WelcomeBanner() {
 
       <div className="grid items-center gap-8 lg:grid-cols-[1fr_230px]">
         <div>
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[9px] font-bold tracking-[1.3px] text-violet-100">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[10px] font-bold tracking-[1.3px] text-violet-100">
             <Sparkles size={13} />
             YOUR CREATIVE WORKSPACE
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           </div>
 
-          <h1 className="max-w-2xl text-[32px] font-black leading-[1.12] tracking-[-1.5px] sm:text-[40px] xl:text-[47px]">
+          <h1 className="max-w-2xl text-[30px] font-black leading-[1.12] tracking-[-1.5px] sm:text-[40px] xl:text-[47px]">
             Big ideas start
             <br className="hidden sm:block" /> with a little{" "}
             <span className="text-fuchsia-300">inspiration.</span>
           </h1>
 
-          <p className="mt-4 max-w-lg text-[12px] leading-6 text-white/65 sm:text-[13px]">
+          <p className="mt-4 max-w-lg text-[13px] leading-6 text-white/70 sm:text-sm">
             Good morning, Creator. Turn your thoughts into content your
             audience will love. Your next great post starts here.
           </p>
 
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <a
               href="/create/"
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-[11px] font-extrabold text-[#352443] hover:bg-violet-50"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-xs font-extrabold text-[#352443] hover:bg-violet-50"
             >
               <Sparkles size={15} className="text-violet-700" />
               Start creating <ArrowRight size={14} />
             </a>
             <a
               href="/calendar/"
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/[0.06] px-4 text-[11px] font-bold text-white hover:bg-white/10"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.06] px-4 text-xs font-bold text-white hover:bg-white/10"
             >
               <CalendarDays size={15} />
               Plan your content
@@ -373,13 +467,13 @@ function WelcomeBanner() {
           </div>
 
           <div className="absolute right-0 top-5 rounded-2xl border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-md">
-            <p className="text-[9px] text-white/55">Keep growing</p>
-            <p className="text-[11px] font-extrabold">One post at a time</p>
+            <p className="text-[10px] text-white/60">Keep growing</p>
+            <p className="text-xs font-extrabold">One post at a time</p>
           </div>
 
           <div className="absolute bottom-4 left-0 rounded-2xl border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-md">
-            <p className="text-[9px] text-white/55">Your next idea</p>
-            <p className="text-[11px] font-extrabold">Starts right here</p>
+            <p className="text-[10px] text-white/60">Your next idea</p>
+            <p className="text-xs font-extrabold">Starts right here</p>
           </div>
         </div>
       </div>
@@ -392,27 +486,25 @@ function StatCard({ stat }) {
   const colors = colorStyles[stat.color];
 
   return (
-    <article className="rounded-[20px] border border-[#EEE9F2] bg-white p-4 transition hover:-translate-y-1 hover:shadow-lg sm:p-5">
+    <article className="min-w-0 rounded-[20px] border border-[#EEE9F2] bg-white p-4 transition hover:-translate-y-1 hover:shadow-lg sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <span
-          className={`flex h-10 w-10 items-center justify-center rounded-[13px] ${colors.icon}`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] ${colors.icon}`}
         >
           <Icon size={19} />
         </span>
 
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-extrabold text-emerald-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-extrabold text-emerald-700">
           <ArrowUpRight size={12} />
           {stat.change}
         </span>
       </div>
 
-      <p className="mt-5 text-[11px] font-semibold text-[#92899F]">
-        {stat.label}
-      </p>
-      <p className="mt-1 text-[27px] font-black tracking-[-1.2px] text-[#292035]">
+      <p className="mt-5 text-xs font-semibold text-[#92899F]">{stat.label}</p>
+      <p className="mt-1 text-[26px] font-black tracking-[-1.2px] text-[#292035] sm:text-[27px]">
         {stat.value}
       </p>
-      <p className="mt-1 text-[10px] text-[#A69DB1]">{stat.note}</p>
+      <p className="mt-1 text-[11px] text-[#A69DB1]">{stat.note}</p>
     </article>
   );
 }
@@ -433,16 +525,16 @@ function Composer({ prompt, setPrompt }) {
   }
 
   return (
-    <section className="rounded-[23px] border border-[#E9E1F3] bg-white p-5 sm:p-6">
+    <section className="rounded-[23px] border border-[#E9E1F3] bg-white p-4 sm:p-6">
       <div className="mb-5 flex items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-[15px] bg-violet-100 text-violet-700">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-violet-100 text-violet-700">
           <WandSparkles size={21} />
         </span>
-        <div>
-          <h2 className="text-[14px] font-extrabold text-[#2A2135]">
+        <div className="min-w-0">
+          <h2 className="text-[15px] font-extrabold text-[#2A2135]">
             What are we creating today?
           </h2>
-          <p className="mt-1 text-[11px] text-[#9A92A6]">
+          <p className="mt-1 text-xs text-[#9A92A6]">
             Start with a thought. ILLIA helps you shape it.
           </p>
         </div>
@@ -464,18 +556,19 @@ function Composer({ prompt, setPrompt }) {
           }}
           placeholder="e.g. Help me create a post about growing my small business in Nigeria..."
           aria-label="Describe the content you want to create"
-          className="min-h-[92px] w-full resize-y bg-transparent px-3 py-3 text-[12px] leading-6 outline-none placeholder:text-[#AAA2B5]"
+          // 16px on mobile stops iOS Safari zooming the page when you tap in
+          className="min-h-[92px] w-full resize-y bg-transparent px-3 py-3 text-base leading-6 outline-none placeholder:text-[#AAA2B5] sm:text-[13px]"
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE9F2] px-2 pt-3">
-          <span className="text-[10px] text-[#A39AAF]">
+          <span className="hidden text-[11px] text-[#A39AAF] sm:inline">
             Press Enter to start
           </span>
 
           <button
             type="button"
             onClick={startCreating}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 text-[11px] font-extrabold text-white"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 text-xs font-extrabold text-white sm:h-10 sm:w-auto"
           >
             <Sparkles size={15} />
             Create with AI <ArrowRight size={14} />
@@ -492,7 +585,7 @@ function Composer({ prompt, setPrompt }) {
               setSelectedAction(label);
               setPrompt(label);
             }}
-            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2.5 text-[10px] font-bold ${
+            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2.5 text-[11px] font-bold ${
               selectedAction === label
                 ? "border-violet-300 bg-violet-50 text-violet-700"
                 : "border-[#EEE9F2] bg-white text-[#756B84] hover:bg-violet-50"
@@ -512,38 +605,38 @@ function RecommendationCard({ item }) {
   const colors = colorStyles[item.color];
 
   return (
-    <article className="overflow-hidden rounded-[20px] border border-[#EEE9F2] bg-white transition hover:-translate-y-1 hover:shadow-lg">
+    <article className="min-w-0 overflow-hidden rounded-[20px] border border-[#EEE9F2] bg-white transition hover:-translate-y-1 hover:shadow-lg">
       <div
-        className={`flex h-[96px] items-center justify-between px-5 ${colors.panel}`}
+        className={`flex h-[96px] items-center justify-between gap-2 px-5 ${colors.panel}`}
       >
         <span
-          className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ${colors.icon}`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ${colors.icon}`}
         >
           <Icon size={23} />
         </span>
-        <span className="text-[9px] font-extrabold tracking-[1px] text-[#81748F]">
+        <span className="truncate text-[10px] font-extrabold tracking-[1px] text-[#81748F]">
           {item.category}
         </span>
-        <Sparkles size={19} className="text-[#A49AB5]" />
+        <Sparkles size={19} className="shrink-0 text-[#A49AB5]" />
       </div>
 
       <div className="p-5">
         <span
-          className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-extrabold ${colors.tag}`}
+          className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-extrabold ${colors.tag}`}
         >
           {item.tag}
         </span>
-        <h3 className="mt-3 text-[13px] font-extrabold leading-5 text-[#30263B]">
+        <h3 className="mt-3 text-sm font-extrabold leading-5 text-[#30263B]">
           {item.title}
         </h3>
-        <p className="mt-2 text-[11px] leading-[1.8] text-[#8F869D]">
+        <p className="mt-2 text-xs leading-[1.8] text-[#8F869D]">
           {item.description}
         </p>
 
         <a
           href="/create/"
           onClick={() => sessionStorage.setItem("illia_home_prompt", item.title)}
-          className="mt-5 inline-flex items-center gap-2 text-[11px] font-extrabold text-violet-700"
+          className="mt-5 inline-flex items-center gap-2 py-1 text-xs font-extrabold text-violet-700"
         >
           Use this idea <ArrowRight size={14} />
         </a>
@@ -595,19 +688,19 @@ function ProgressPanel() {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-extrabold text-[#30263B]">
+          <p className="text-[13px] font-extrabold text-[#30263B]">
             You're building momentum
           </p>
-          <p className="mt-1 text-[10px] leading-5 text-[#9A92A6]">
+          <p className="mt-1 text-[11px] leading-5 text-[#9A92A6]">
             Keep creating to reach your weekly content goal.
           </p>
-          <span className="mt-2 inline-flex rounded-lg bg-violet-50 px-2 py-1 text-[10px] font-extrabold text-violet-700">
+          <span className="mt-2 inline-flex rounded-lg bg-violet-50 px-2 py-1 text-[11px] font-extrabold text-violet-700">
             3 of 5 posts
           </span>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-[#F0ECF5] pt-4 text-[10px]">
+      <div className="mt-3 flex items-center justify-between border-t border-[#F0ECF5] pt-4 text-[11px]">
         <span className="text-[#9A92A6]">Weekly target</span>
         <span className="font-extrabold text-[#5D526B]">2 posts to go</span>
       </div>
@@ -635,7 +728,7 @@ function TrendPanel() {
               key={trend.title}
               className="group flex items-center gap-3 rounded-xl px-2 py-3 hover:bg-[#FAF8FD]"
             >
-              <span className="w-4 text-[10px] font-extrabold text-[#B2A9BE]">
+              <span className="w-4 text-[11px] font-extrabold text-[#B2A9BE]">
                 0{index + 1}
               </span>
               <span
@@ -644,14 +737,14 @@ function TrendPanel() {
                 <Hash size={17} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[11px] font-extrabold text-[#3B3048]">
+                <span className="block truncate text-xs font-extrabold text-[#3B3048]">
                   {trend.title}
                 </span>
-                <span className="mt-1 block text-[10px] text-[#A49BAF]">
+                <span className="mt-1 block text-[11px] text-[#A49BAF]">
                   {trend.category}
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-1 text-[10px] font-extrabold text-emerald-600">
+              <span className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold text-emerald-600">
                 <ArrowUpRight size={12} /> {trend.growth}
               </span>
             </a>
@@ -659,7 +752,7 @@ function TrendPanel() {
         })}
       </div>
 
-      <p className="mt-3 rounded-xl bg-[#F8F5FC] px-3 py-2.5 text-[10px] leading-5 text-[#8E829F]">
+      <p className="mt-3 rounded-xl bg-[#F8F5FC] px-3 py-2.5 text-[11px] leading-5 text-[#8E829F]">
         <Sparkles size={12} className="mr-1 inline text-violet-600" />
         Sample trends for the UI preview. Connect your trends service for live
         data.
@@ -691,22 +784,25 @@ function UpcomingPanel() {
                 <span className="text-base font-black leading-5 text-[#392B49]">
                   {post.day}
                 </span>
-                <span className="text-[8px] font-extrabold tracking-wide text-[#9C91AC]">
+                <span className="text-[10px] font-extrabold tracking-wide text-[#9C91AC]">
                   {post.month}
                 </span>
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] font-extrabold text-[#3B3048]">
+                <p className="truncate text-xs font-extrabold text-[#3B3048]">
                   {post.title}
                 </p>
-                <p className="mt-1 flex items-center gap-1 text-[10px] text-[#9A92A6]">
-                  <Clock3 size={11} /> {post.time} · {post.platform}
+                <p className="mt-1 flex items-center gap-1 text-[11px] text-[#9A92A6]">
+                  <Clock3 size={11} className="shrink-0" />
+                  <span className="truncate">
+                    {post.time} · {post.platform}
+                  </span>
                 </p>
               </div>
 
               <span
-                className={`hidden rounded-lg px-2 py-1 text-[9px] font-bold sm:inline-flex ${colors.tag}`}
+                className={`hidden rounded-lg px-2 py-1 text-[10px] font-bold sm:inline-flex ${colors.tag}`}
               >
                 Planned
               </span>
@@ -714,7 +810,7 @@ function UpcomingPanel() {
               <a
                 href="/calendar/"
                 aria-label={`View ${post.title} in calendar`}
-                className="rounded-lg p-1.5 text-[#A49BAF] hover:bg-[#F8F5FC]"
+                className="rounded-lg p-2 text-[#A49BAF] hover:bg-[#F8F5FC]"
               >
                 <MoreHorizontal size={17} />
               </a>
@@ -725,7 +821,7 @@ function UpcomingPanel() {
 
       <a
         href="/calendar/"
-        className="mt-4 flex h-10 items-center justify-center gap-2 rounded-xl border border-dashed border-[#DCD2EA] text-[11px] font-extrabold text-violet-700 hover:bg-violet-50"
+        className="mt-4 flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-[#DCD2EA] text-xs font-extrabold text-violet-700 hover:bg-violet-50"
       >
         <Plus size={15} /> Add to calendar
       </a>
@@ -768,10 +864,10 @@ function RecentWork({ search }) {
                   <Icon size={19} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12px] font-extrabold text-[#3B3048]">
+                  <span className="block truncate text-[13px] font-extrabold text-[#3B3048]">
                     {work.title}
                   </span>
-                  <span className="mt-1.5 block text-[10px] text-[#A49BAF]">
+                  <span className="mt-1.5 block text-[11px] text-[#A49BAF]">
                     {work.type} · Edited {work.date.toLowerCase()}
                   </span>
                 </span>
@@ -798,13 +894,13 @@ function InsightCard() {
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-violet-700 shadow-sm">
         <Sparkles size={18} />
       </span>
-      <p className="mt-4 text-[9px] font-extrabold tracking-[1.3px] text-violet-700">
+      <p className="mt-4 text-[10px] font-extrabold tracking-[1.3px] text-violet-700">
         A LITTLE CREATOR INSIGHT
       </p>
-      <h3 className="mt-2 text-[16px] font-black leading-6 text-[#382747]">
+      <h3 className="mt-2 text-[17px] font-black leading-6 text-[#382747]">
         Consistency beats waiting for inspiration.
       </h3>
-      <p className="mt-2 text-[11px] leading-5 text-[#85758F]">
+      <p className="mt-2 text-xs leading-5 text-[#85758F]">
         Start with one useful idea, share it clearly, and give your audience a
         reason to come back.
       </p>
@@ -816,7 +912,7 @@ function InsightCard() {
             "Create a post about why consistency beats waiting for inspiration."
           )
         }
-        className="mt-4 inline-flex items-center gap-2 text-[11px] font-extrabold text-violet-700"
+        className="mt-4 inline-flex items-center gap-2 py-1 text-xs font-extrabold text-violet-700"
       >
         Turn this into a post <ArrowRight size={13} />
       </a>
@@ -843,18 +939,33 @@ export default function Home() {
     <div className="min-h-screen bg-[#FCFBFD] text-[#292035]">
       <Topbar search={search} setSearch={setSearch} />
 
-      <div className="mx-auto max-w-[1600px] px-4 pb-28 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-10 xl:px-10">
+      <div className="mx-auto max-w-[1600px] px-4 pb-28 pt-5 sm:px-6 sm:pt-8 lg:px-8 lg:pb-10 xl:px-10">
+        {/* The header search is hidden below md, so phones get one here */}
+        <label className="relative mb-5 block md:hidden">
+          <Search
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A69DB3]"
+          />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search your workspace..."
+            aria-label="Search your workspace"
+            className="h-11 w-full rounded-xl border border-[#EEE9F2] bg-white pl-10 pr-3 text-base outline-none focus:border-violet-300 focus:ring-4 focus:ring-violet-50"
+          />
+        </label>
+
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[1.5px] text-violet-700">
+            <p className="text-[11px] font-extrabold uppercase tracking-[1.5px] text-violet-700">
               Your workspace
             </p>
-            <p className="mt-1 text-[11px] text-[#9A92A6]">{formattedDate}</p>
+            <p className="mt-1 text-xs text-[#9A92A6]">{formattedDate}</p>
           </div>
 
           <a
             href="/create/"
-            className="inline-flex h-9 items-center gap-2 rounded-xl border border-[#E9E1F3] bg-white px-3 text-[10px] font-bold text-[#665774] hover:text-violet-700"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#E9E1F3] bg-white px-3 text-[11px] font-bold text-[#665774] hover:text-violet-700"
           >
             <Plus size={14} /> New project
           </a>
@@ -864,22 +975,23 @@ export default function Home() {
 
         <section className="mb-8">
           <div className="mb-4">
-            <h2 className="text-[15px] font-extrabold text-[#2A2135]">
+            <h2 className="text-base font-extrabold text-[#2A2135]">
               Your overview
             </h2>
-            <p className="mt-1 text-[11px] text-[#9A92A6]">
+            <p className="mt-1 text-xs text-[#9A92A6]">
               A quick look at your creative progress.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:gap-4">
             {stats.map((stat) => (
               <StatCard key={stat.label} stat={stat} />
             ))}
           </div>
         </section>
 
-        <div className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,.85fr)]">
+        {/* Two columns from xl (was 2xl), so laptops don't get one long stack */}
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,.9fr)]">
           <div className="min-w-0 space-y-8">
             <Composer prompt={prompt} setPrompt={setPrompt} />
 
@@ -890,7 +1002,7 @@ export default function Home() {
                 action="Explore ideas"
                 href="/ideas/"
               />
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                 {ideas.map((item) => (
                   <RecommendationCard key={item.title} item={item} />
                 ))}
@@ -908,7 +1020,7 @@ export default function Home() {
           </div>
         </div>
 
-        <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE9F2] pt-5 text-[10px] text-[#A49BAF]">
+        <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#EEE9F2] pt-5 text-[11px] text-[#A49BAF]">
           <span>© {new Date().getFullYear()} ILLIA · Made for creators</span>
           <span className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
