@@ -455,7 +455,7 @@ export default function Faq({
           {/* CTA BUTTON */}
 
           <Link
-            to="/studio"
+            to="/register"
             className="
               inline-flex
               items-center

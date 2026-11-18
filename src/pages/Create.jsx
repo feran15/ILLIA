@@ -271,6 +271,67 @@ function Message({ msg, onEdit, onTick }) {
     navigator.clipboard.writeText(msg.content).then(() => toast.success("Copied to clipboard"));
   };
 
+async function compressImageForAI(file) {
+  const bitmap = await createImageBitmap(file);
+
+  const MAX_DIMENSION = 1024;
+  const scale = Math.min(
+    1,
+    MAX_DIMENSION / Math.max(bitmap.width, bitmap.height)
+  );
+
+  const canvas = document.createElement("canvas");
+
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    bitmap.close();
+    throw new Error("Could not process this image.");
+  }
+
+  context.drawImage(
+    bitmap,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  bitmap.close();
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (result) => {
+        if (result) resolve(result);
+        else reject(new Error("Image compression failed."));
+      },
+      "image/jpeg",
+      0.78
+    );
+  });
+
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(
+      new Error("Could not read compressed image.")
+    );
+
+    reader.readAsDataURL(blob);
+  });
+
+  return {
+    base64: dataUrl.split(",")[1],
+    mimeType: "image/jpeg",
+    preview: URL.createObjectURL(blob)
+  };
+}
+
+
   return (
     <div
       className={`flex gap-2.5 sm:gap-3 ${
@@ -531,16 +592,39 @@ export default function Create() {
     }
   }
 
-  async function clearHistory() {
-    setClearing(true);
-    await Promise.all(
-      threads.map((t) => callBackend(`/api/create/threads/${t.id}`, { method: "DELETE" }).catch(() => {}))
+async function clearHistory() {
+  if (clearing) return;
+
+  setClearing(true);
+
+  try {
+    const results = await Promise.allSettled(
+      threads.map((thread) =>
+        aiApi.delete(`/api/create/threads/${thread.id}`)
+      )
     );
-    startNewChat();
+
+    const failed = results.filter(
+      (result) => result.status === "rejected"
+    );
+
     await refreshThreads();
+
+    if (failed.length) {
+      toast.error(
+        `${failed.length} conversation(s) could not be deleted.`
+      );
+    } else {
+      startNewChat();
+      toast.success("All conversations cleared.");
+    }
+  } catch (error) {
+    console.error("Clear history error:", error);
+    toast.error("Couldn't clear conversation history.");
+  } finally {
     setClearing(false);
-    toast.success("All conversations cleared");
   }
+}
 
   async function send(override) {
     const text = (typeof override === "string" ? override : input).trim();
@@ -559,13 +643,11 @@ export default function Create() {
 
     try {
       const data = await aiApi.post("/api/create/chat", {
-        payload: {
-          message: text,
-          image_base64: isImage ? att.base64 : null,
-          threadId: activeThreadId,
-          projectId: activeThreadId ? undefined : pendingProjectId,
-        },
-      });
+  message: text,
+  image_base64: isImage ? att.base64 : null,
+  threadId: activeThreadId,
+  projectId: activeThreadId ? undefined : pendingProjectId,
+});
       setBanner("");
       setMessages((m) => [...m, { id: nextId(), role: "assistant", content: data.reply, animate: true }]);
       if (data.threadId && data.threadId !== activeThreadId) {
@@ -711,8 +793,9 @@ export default function Create() {
     setCreatingProject(true);
     try {
       const data = await aiApi.post("/api/create/projects", {
-        payload: { name, description: newProjectDesc.trim() },
-      });
+  name,
+  description: newProjectDesc.trim(),
+}); 
       setNewProjectOpen(false);
       setNewProjectName("");
       setNewProjectDesc("");
@@ -730,7 +813,7 @@ export default function Create() {
     if (!activeProjectId) return;
     setDeletingProject(true);
     try {
-      await callBackend(`/api/create/projects/${activeProjectId}`, { method: "DELETE" });
+     await aiApi.delete(`/api/create/projects/${activeProjectId}`);
       const removedId = activeProjectId;
       setDeleteProjectOpen(false);
       setActiveProjectId(null);

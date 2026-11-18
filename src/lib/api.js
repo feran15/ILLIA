@@ -121,6 +121,18 @@ function createAPI(baseURL) {
         method: "POST",
         body: formData,
       }),
+      
+      transcribe: (formData) =>
+  apiRequest(baseURL, "/api/create/transcribe", {
+    method: "POST",
+    body: formData,
+  }),
+
+chat: (payload) =>
+  apiRequest(baseURL, "/api/create/chat", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }),
   };
 };
 
