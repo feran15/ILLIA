@@ -307,14 +307,14 @@ export default function Settings() {
     <div className="illia-create-theme min-h-screen w-full px-3 pb-8 pt-16 sm:px-4 lg:py-6">
       <style>{`
         .illia-create-theme {
-          background: #241528;
-          color: #FFFFFF;
-          color-scheme: dark;
+          background: white;
+          color: black;
+          color-scheme: light;
         }
-        .illia-create-theme .bg-surf { background-color: #2F2138; }
-        .illia-create-theme .bg-alt { background-color: #3B2945; }
+        .illia-create-theme .bg-surf { }
+        .illia-create-theme .bg-alt { }
         .illia-create-theme .text-ink { color: #FFFFFF; }
-        .illia-create-theme .text-mute { color: #D8C9DF !important; }
+        .illia-create-theme .text-mute { color: black }
         .illia-create-theme .text-faint { color: #B5A3BE !important; }
         .illia-create-theme .border-line { border-color: #503B5B !important; }
         .illia-create-theme .soft { background-color: #49305A !important; }

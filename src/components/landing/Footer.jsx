@@ -64,13 +64,7 @@ export default function Footer() {
               aria-label="IlliaAi homepage"
               className="inline-flex items-center gap-2.5"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/20">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-
-              <span className="font-display text-xl font-bold tracking-tight text-foreground">
-                Illia<span className="text-primary">Ai</span>
-              </span>
+             <img src="/ILLIA.png" alt=""  className='w-[150px]'/>
             </Link>
 
             <p className="mt-5 max-w-sm text-sm leading-7 text-muted-foreground">

@@ -477,7 +477,7 @@ export default function Faq({
               hover:opacity-90
             "
           >
-            <Sparkles className="h-6 w-6" />
+            
 
             Start Creating, It's Free
           </Link>

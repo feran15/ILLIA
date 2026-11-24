@@ -36,16 +36,15 @@ const features = [
   },
   {
     number: "02",
-    label: "AI IMAGE GENERATOR",
-    title: "Bring your creative",
-    highlight: "vision to life.",
+    label: "TRENDS TRACKING",
+    title: "Catch up with the",
+    highlight: "updates around you.",
     description:
       "Transform your ideas into stunning visuals that capture attention and make your brand stand out on social media.",
     icon: ImageIcon,
     points: [
-      "Generate original visuals",
-      "Create eye-catching content",
-      "Give your ideas a visual identity",
+      "Get detailed info from every social media ",
+      "Get eye-catching content",
     ],
     screenTitle: "AI Image Studio",
     screenSubtitle: "Turn your imagination into visuals.",
@@ -399,12 +398,7 @@ function PhoneScreen({ active, setActive }) {
           {/* IlliaAi app header */}
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-pink-500 text-white">
-                <Sparkles size={17} />
-              </span>
-              <span className="text-sm font-black tracking-tight text-gray-900">
-                ILLIA
-              </span>
+            <img src="/ILLIA.png" className="w-[100px]" alt="" />
             </div>
 
             <div className="flex items-center gap-3 text-gray-500">
@@ -455,7 +449,7 @@ function PhoneScreen({ active, setActive }) {
           </div>
 
           {/* Interactive carousel navigation */}
-          <div className="border-t border-gray-200 bg-white px-4 py-3">
+          {/* <div className="border-t border-gray-200 bg-white px-4 py-3">
             <div className="flex items-center justify-center gap-2">
               {features.map((feature, index) => (
                 <button
@@ -475,7 +469,7 @@ function PhoneScreen({ active, setActive }) {
             <p className="mt-2 text-center text-[9px] text-gray-400">
               Your creative studio, all in one place
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -518,7 +512,7 @@ export default function AnalyticsShowcase() {
         {/* Section heading */}
         <div className="mx-auto mb-20 max-w-2xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-4 py-2 text-xs font-bold tracking-[0.16em] text-purple-700 shadow-sm">
-            <Sparkles size={14} />
+          .
             YOUR CREATIVE STUDIO
           </span>
 
@@ -660,7 +654,7 @@ export default function AnalyticsShowcase() {
           {/* RIGHT: Interactive phone carousel */}
           <div className="relative flex items-start justify-center lg:sticky lg:top-24">
             {/* Floating workspace card */}
-            <motion.div
+            {/* <motion.div
               animate={{ y: [0, -9, 0] }}
               transition={{
                 duration: 4,
@@ -678,7 +672,7 @@ export default function AnalyticsShowcase() {
                   <p className="text-sm font-extrabold">All in one place</p>
                 </div>
               </div>
-            </motion.div>
+            </motion.div> */}
 
             {/* Phone with changing screen */}
             <motion.div
@@ -692,7 +686,7 @@ export default function AnalyticsShowcase() {
             </motion.div>
 
             {/* Floating status card */}
-            <motion.div
+            {/* <motion.div
               animate={{ y: [0, 8, 0] }}
               transition={{
                 duration: 3.5,
@@ -710,7 +704,7 @@ export default function AnalyticsShowcase() {
                   <p className="text-sm font-extrabold">Starts with Illia</p>
                 </div>
               </div>
-            </motion.div>
+            </motion.div> */}
           </div>
         </div>
       </div>
