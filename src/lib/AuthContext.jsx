@@ -1,187 +1,284 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { auth } from '../Firebase/auth';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
-const AuthContext = createContext();
+
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback
+} from "react";
+
+import { auth } from "../Firebase/auth";
+
+import {
+  onAuthStateChanged,
+  signOut,
+  reload
+} from "firebase/auth";
+
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  // Firebase user
   const [user, setUser] = useState(null);
+
+  // Authentication states
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+
+  // Loading states
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
+
+  // Other application states
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const [appPublicSettings, setAppPublicSettings] = useState(null);
 
+  /*
+  |--------------------------------------------------------------------------
+  | REFRESH FIREBASE USER
+  |--------------------------------------------------------------------------
+  */
 
-  useEffect(() => {
-  const unsubscribe = onAuthStateChanged(
-    auth,
-    async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        setIsAuthenticated(true);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-      setIsLoadingPublicSettings(false);
-    }
-  );
-
-  return unsubscribe;
-}, []);
-
-  const checkAppState = async () => {
-    try {
-      setIsLoadingPublicSettings(true);
-      setAuthError(null);
-      
-      // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
-      const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
-        headers: {
-          'X-App-Id': appParams.appId
-        },
-        token: appParams.token, // Include token if available
-        interceptResponses: true
-      });
-      
-      try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
-        setAppPublicSettings(publicSettings);
-        
-        // If we got the app public settings successfully, check if user is authenticated
-        if (appParams.token) {
-          await checkUserAuth();
-        } else {
-          setIsLoadingAuth(false);
-          setIsAuthenticated(false);
-          setAuthChecked(true);
-        }
-        setIsLoadingPublicSettings(false);
-      } catch (appError) {
-        console.error('App state check failed:', appError);
-        
-        // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            setAuthError({
-              type: reason,
-              message: appError.message
-            });
-          }
-        } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
-        }
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
-      }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      setAuthError({
-        type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
-      });
-      setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
-    }
-  };
-
-
-const checkUserAuth = async () => {
-  try {
-    setIsLoadingAuth(true);
-
-    const currentUser =
-      auth.currentUser;
+  const refreshUser = useCallback(async () => {
+    const currentUser = auth.currentUser;
 
     if (!currentUser) {
       setUser(null);
+      setIsSignedIn(false);
+      setIsEmailVerified(false);
       setIsAuthenticated(false);
-      return;
+
+      return false;
     }
 
-    // Optional:
-    // refresh token if expired
-    await currentUser.getIdToken(true);
+    try {
+      await reload(currentUser);
 
-    setUser(currentUser);
-    setIsAuthenticated(true);
+      const updatedUser = auth.currentUser;
 
-  } catch (error) {
-    console.error(
-      'User auth check failed:',
-      error
+      if (!updatedUser) {
+        setUser(null);
+        setIsSignedIn(false);
+        setIsEmailVerified(false);
+        setIsAuthenticated(false);
+
+        return false;
+      }
+
+      setUser(updatedUser);
+      setIsSignedIn(true);
+      setIsEmailVerified(updatedUser.emailVerified);
+      setIsAuthenticated(updatedUser.emailVerified);
+
+      return updatedUser.emailVerified;
+
+    } catch (error) {
+      console.error("Unable to refresh Firebase user:", error);
+
+      return false;
+    }
+  }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | FIREBASE AUTH LISTENER
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (firebaseUser) => {
+        try {
+          if (firebaseUser) {
+            // Refresh user to get the latest verification status
+            await reload(firebaseUser);
+
+            const updatedUser = auth.currentUser;
+
+            if (updatedUser) {
+              setUser(updatedUser);
+              setIsSignedIn(true);
+              setIsEmailVerified(updatedUser.emailVerified);
+              setIsAuthenticated(updatedUser.emailVerified);
+            } else {
+              setUser(null);
+              setIsSignedIn(false);
+              setIsEmailVerified(false);
+              setIsAuthenticated(false);
+            }
+
+          } else {
+            setUser(null);
+            setIsSignedIn(false);
+            setIsEmailVerified(false);
+            setIsAuthenticated(false);
+          }
+
+        } catch (error) {
+          console.error("Firebase auth listener error:", error);
+
+          setUser(firebaseUser);
+          setIsSignedIn(!!firebaseUser);
+          setIsEmailVerified(false);
+          setIsAuthenticated(false);
+
+        } finally {
+          setIsLoadingAuth(false);
+          setAuthChecked(true);
+          setIsLoadingPublicSettings(false);
+        }
+      }
     );
 
-    setUser(null);
-    setIsAuthenticated(false);
+    return unsubscribe;
+  }, []);
 
-    setAuthError({
-      type: 'auth_required',
-      message:
-        'Authentication required'
-    });
+  /*
+  |--------------------------------------------------------------------------
+  | CHECK USER AUTHENTICATION
+  |--------------------------------------------------------------------------
+  */
 
-  } finally {
-    setIsLoadingAuth(false);
-    setAuthChecked(true);
-  }
-};
+  const checkUserAuth = async () => {
+    try {
+      setIsLoadingAuth(true);
+      setAuthError(null);
+
+      const verified = await refreshUser();
+
+      if (!auth.currentUser) {
+        setAuthError({
+          type: "auth_required",
+          message: "Authentication required"
+        });
+      }
+
+      return verified;
+
+    } catch (error) {
+      console.error("User auth check failed:", error);
+
+      setAuthError({
+        type: "auth_required",
+        message: "Authentication required"
+      });
+
+      return false;
+
+    } finally {
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | CHECK APPLICATION PUBLIC SETTINGS
+  |--------------------------------------------------------------------------
+  |
+  | Keep your existing app-specific integration here.
+  | The original code referenced createAxiosClient and appParams,
+  | which were not declared in the file you supplied.
+  |
+  */
+
+  const checkAppState = async () => {
+    console.warn(
+      "checkAppState requires your existing createAxiosClient and appParams configuration."
+    );
+
+    setIsLoadingPublicSettings(false);
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOGOUT
+  |--------------------------------------------------------------------------
+  */
+
   const logout = async () => {
-  await signOut(auth);
+    try {
+      await signOut(auth);
 
-  setUser(null);
-  setIsAuthenticated(false);
-};
+      setUser(null);
+      setIsSignedIn(false);
+      setIsEmailVerified(false);
+      setIsAuthenticated(false);
 
- const navigateToLogin = () => {
-  window.location.href = '/login';
-};
+      setAuthError(null);
+
+    } catch (error) {
+      console.error("Logout failed:", error);
+      throw error;
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | NAVIGATE TO LOGIN
+  |--------------------------------------------------------------------------
+  */
+
+  const navigateToLogin = () => {
+    window.location.href = "/login";
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | CONTEXT PROVIDER
+  |--------------------------------------------------------------------------
+  */
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
-      isLoadingAuth,
-      isLoadingPublicSettings,
-      authError,
-      appPublicSettings,
-      authChecked,
-      logout,
-      navigateToLogin,
-      checkUserAuth,
-      checkAppState
-    }}>
+    <AuthContext.Provider
+      value={{
+        // User
+        user,
+
+        // Authentication
+        isAuthenticated,
+        isSignedIn,
+        isEmailVerified,
+
+        // Loading
+        isLoadingAuth,
+        isLoadingPublicSettings,
+        authChecked,
+
+        // Errors and settings
+        authError,
+        appPublicSettings,
+
+        // Methods
+        logout,
+        navigateToLogin,
+        checkUserAuth,
+        checkAppState,
+        refreshUser
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
+/*
+|--------------------------------------------------------------------------
+| CUSTOM AUTH HOOK
+|--------------------------------------------------------------------------
+*/
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error(
+      "useAuth must be used within an AuthProvider"
+    );
   }
+
   return context;
 };
-

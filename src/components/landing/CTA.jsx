@@ -402,9 +402,8 @@ export default function Faq({
               backdrop-blur
             "
           >
-            <Sparkles className="h-4 w-4" />
-
-            AI-powered content creation
+            
+          .  AI-powered content creation
           </div>
 
           {/* HEADING */}

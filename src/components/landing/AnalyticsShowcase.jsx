@@ -5,6 +5,7 @@ import {
   Sparkles,
   Image as ImageIcon,
   CalendarDays,
+  Bot,
   TrendingUp,
   BarChart3,
   ArrowUpRight,
@@ -25,7 +26,7 @@ const features = [
     highlight: "content that connects.",
     description:
       "Create engaging captions, fresh content ideas, and platform-ready posts without spending hours staring at a blank screen.",
-    icon: Sparkles,
+    icon: Bot,
     points: [
       "Generate captions in seconds",
       "Create ideas for every platform",
@@ -34,21 +35,22 @@ const features = [
     screenTitle: "AI Assistant",
     screenSubtitle: "Your next great idea starts here.",
   },
-  {
-    number: "02",
-    label: "TRENDS TRACKING",
-    title: "Catch up with the",
-    highlight: "updates around you.",
-    description:
-      "Transform your ideas into stunning visuals that capture attention and make your brand stand out on social media.",
-    icon: ImageIcon,
-    points: [
-      "Get detailed info from every social media ",
-      "Get eye-catching content",
-    ],
-    screenTitle: "AI Image Studio",
-    screenSubtitle: "Turn your imagination into visuals.",
-  },
+{
+  number: "02",
+  label: "TRENDS TRACKING",
+  title: "Stay ahead of",
+  highlight: "what's trending.",
+  description:
+    "Discover trending topics, hashtags, conversations, and viral content across social media so you never miss an opportunity.",
+  icon: TrendingUp,
+  points: [
+    "Discover trending topics and hashtags",
+    "Track conversations across social platforms",
+    "Find viral content opportunities",
+  ],
+  screenTitle: "Trends Tracker",
+  screenSubtitle: "Discover what's happening around you.",
+},
   {
     number: "03",
     label: "CONTENT CALENDAR",
@@ -379,6 +381,55 @@ function CalendarScreen() {
   );
 }
 
+function TrendsScreen() {
+  const trends = [
+    { name: "#ContentCreation", category: "Creator Economy", growth: "+82%" },
+    { name: "#TikTokTrends", category: "Social Media", growth: "+64%" },
+    { name: "#AfricanCreators", category: "Community", growth: "+48%" },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl bg-gradient-to-br from-violet-600 to-pink-500 p-4 text-white">
+        <TrendingUp size={23} />
+        <p className="mt-4 text-lg font-extrabold">
+          What's trending?
+        </p>
+        <p className="mt-2 text-[11px] text-white/80">
+          Discover conversations and opportunities worth exploring.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white p-3">
+        <p className="text-[11px] font-bold text-gray-900">
+          Trending topics
+        </p>
+
+        {trends.map((trend) => (
+          <div
+            key={trend.name}
+            className="mt-3 flex items-center justify-between gap-2 border-b border-gray-100 pb-3 last:border-0"
+          >
+            <div>
+              <p className="text-[10px] font-bold text-gray-800">
+                {trend.name}
+              </p>
+              <p className="mt-1 text-[9px] text-gray-400">
+                {trend.category}
+              </p>
+            </div>
+
+            <span className="flex items-center gap-1 text-[10px] font-bold text-green-600">
+              <TrendingUp size={12} />
+              {trend.growth}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PhoneScreen({ active, setActive }) {
   const current = features[active];
   const ScreenIcon = current.icon;
@@ -441,7 +492,7 @@ function PhoneScreen({ active, setActive }) {
                 transition={slideTransition}
               >
                 {active === 0 && <AssistantScreen />}
-                {active === 1 && <ImageGeneratorScreen />}
+               {active === 1 && <TrendsScreen />}
                 {active === 2 && <CalendarScreen />}
                 {active === 3 && <AnalyticsScreen />}
               </motion.div>
